@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Halastó Szimulációs Műszerfal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Calm Harmony -->
+    <!-- Application Structure Plan: A single-page application structured as a trainer's command center. The left pane is the 'Vezérlőpult' (Control Panel) for game setup, round-by-round input, and triggering/configuring complex events via modals. The right pane is the 'Kivetítő' (Dashboard), displaying real-time game state (pond, bank), player wealth, and historical trends. This dual-pane architecture cleanly separates facilitator actions from participant feedback, allowing for dynamic, in-game adjustments based on group dynamics. The user flow progresses from setup to an iterative cycle of input -> event configuration -> consequence visualization. -->
+    <!-- Visualization & Content Choices: 1. Pond Status: Goal -> Visualize resource health. Method -> Line Chart (Chart.js). 2. Player Wealth: Goal -> Compare individual success. Method -> Bar Chart (Chart.js). 3. Key Stats: Goal -> At-a-glance status. Method -> Large numeric displays. 4. Unexpected Events: Goal -> Introduce and configure systemic shocks. Method -> Dropdown triggering dynamic, parameter-driven modals. This provides maximum flexibility for the trainer. For example, the 'Royal Tax' event opens a modal to select players and duration, directly modifying player state variables. The 'Spawning Ground Project' modal collects variable inputs from players to affect a global state change (maxPond). -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8f9fa; }
+        .chart-container { position: relative; width: 100%; max-width: 800px; margin: auto; height: 280px; max-height: 35vh; }
+        @media (min-width: 768px) { .chart-container { height: 320px; } }
+        .number-display { font-size: 2.2rem; line-height: 1.1; }
+        .modal { transition: opacity 0.3s ease; }
+        .modal-body { max-height: 60vh; overflow-y: auto; }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <div id="app" class="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
+        <header class="text-center mb-8">
+            <h1 class="text-3xl md:text-4xl font-bold text-gray-700">Halastó Szimulációs Műszerfal</h1>
+            <p class="text-gray-500 mt-2">A közlegelők tragédiája interaktív szimulációja</p>
+        </header>
+
+        <div id="setup-screen" class="max-w-md mx-auto bg-white p-8 rounded-xl shadow-lg">
+            <h2 class="text-2xl font-bold text-center mb-6">Játék Beállítása</h2>
+            <div class="space-y-4">
+                <div>
+                    <label for="player-count" class="block text-sm font-medium text-gray-700">Halászok száma (5-10):</label>
+                    <input type="number" id="player-count" name="player-count" min="5" max="10" value="5" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2">
+                </div>
+                <button id="start-game-btn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg">Játék Indítása</button>
+            </div>
+        </div>
+
+        <div id="game-screen" class="hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div class="lg:col-span-1 bg-white p-6 rounded-xl shadow-lg space-y-6">
+                    <h2 class="text-2xl font-bold text-center">Vezérlőpult</h2>
+                    <div>
+                        <h3 class="text-lg font-semibold mb-2">Kör #<span id="current-round">1</span></h3>
+                        <p class="text-sm text-gray-600 mb-4">Add meg a kifogott halak számát.</p>
+                        <div id="player-inputs" class="space-y-3"></div>
+                    </div>
+                     <div class="border-t pt-5 space-y-3">
+                         <div>
+                            <label for="manual-fixed-cost" class="block text-sm font-medium text-gray-700">Fix Költség Módosítása:</label>
+                            <input type="number" id="manual-fixed-cost" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2">
+                        </div>
+                    </div>
+                    <div class="border-t pt-5">
+                        <h3 class="text-lg font-semibold mb-2">Váratlan esemény</h3>
+                         <div class="space-y-3">
+                            <select id="chaos-card-select" class="block w-full rounded-md border-gray-300 shadow-sm p-2"></select>
+                            <button id="trigger-chaos-btn" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-2 px-4 rounded-lg">Esemény Beállítása</button>
+                        </div>
+                    </div>
+                    <div class="space-y-4 border-t pt-5">
+                        <button id="end-round-btn" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg">Kör Lezárása</button>
+                        <button id="new-game-btn" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg">Új Játék</button>
+                    </div>
+                </div>
+                <div class="lg:col-span-2 space-y-8">
+                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-center">
+                        <div class="bg-blue-100 text-blue-800 p-4 rounded-xl shadow-md"><h3 class="text-md font-semibold">Halak a tóban</h3><p id="pond-status" class="font-bold number-display">100</p></div>
+                        <div class="bg-yellow-100 text-yellow-800 p-4 rounded-xl shadow-md"><h3 class="text-md font-semibold">Bank (Adó)</h3><p id="bank-status" class="font-bold number-display">0</p></div>
+                        <div class="bg-gray-200 text-gray-800 p-4 rounded-xl shadow-md"><h3 class="text-md font-semibold">Fix Költség</h3><p id="fixed-cost-display" class="font-bold number-display">0</p></div>
+                        <div id="active-effect-container" class="bg-purple-100 text-purple-800 p-4 rounded-xl shadow-md hidden"><h3 class="text-md font-semibold">Aktív Hatások</h3><div id="active-effect-display" class="font-bold text-sm leading-tight mt-2 text-left"></div></div>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-lg"><h3 class="text-xl font-bold text-center mb-4">Halászok Vagyona</h3><div class="chart-container"><canvas id="player-wealth-chart"></canvas></div></div>
+                    <div class="bg-white p-6 rounded-xl shadow-lg"><h3 class="text-xl font-bold text-center mb-4">Tó Állapota Körönként</h3><div class="chart-container"><canvas id="pond-history-chart"></canvas></div></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div id="chaos-modal" class="modal fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50 opacity-0 pointer-events-none">
+        <div class="bg-white rounded-2xl shadow-2xl p-6 sm:p-8 max-w-lg w-full transform transition-transform duration-300 scale-95">
+            <h2 id="modal-title" class="text-2xl font-bold mb-4 text-gray-800"></h2>
+            <div id="modal-body" class="modal-body mb-6 text-gray-600"></div>
+            <div id="modal-footer" class="flex justify-end space-x-3"></div>
+        </div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const setupScreen = document.getElementById('setup-screen');
+        const gameScreen = document.getElementById('game-screen');
+        const playerCountInput = document.getElementById('player-count');
+        const startGameBtn = document.getElementById('start-game-btn');
+        const endGameBtn = document.getElementById('end-round-btn');
+        const newGameBtn = document.getElementById('new-game-btn');
+        const playerInputsContainer = document.getElementById('player-inputs');
+        const manualFixedCostInput = document.getElementById('manual-fixed-cost');
+        const currentRoundDisplay = document.getElementById('current-round');
+        const pondStatusDisplay = document.getElementById('pond-status');
+        const bankStatusDisplay = document.getElementById('bank-status');
+        const fixedCostDisplay = document.getElementById('fixed-cost-display');
+        const activeEffectContainer = document.getElementById('active-effect-container');
+        const activeEffectDisplay = document.getElementById('active-effect-display');
+        const chaosCardSelect = document.getElementById('chaos-card-select');
+        const triggerChaosBtn = document.getElementById('trigger-chaos-btn');
+        const chaosModal = document.getElementById('chaos-modal');
+        const modalTitle = document.getElementById('modal-title');
+        const modalBody = document.getElementById('modal-body');
+        const modalFooter = document.getElementById('modal-footer');
+
+        let gameState = {};
+        let playerWealthChart, pondHistoryChart;
+
+        // Chaos Card Definitions & Logic
+        const chaosCards = [
+            { id: 'none', title: 'Válassz egy eseményt...' },
+            { id: 'kiralyi_ado', title: 'A Királyi Adó', setupModal: setupRoyalTaxModal },
+            { id: 'idegen_halasz', title: 'Az Idegen Halász', setupModal: setupNewFisherModal },
+            { id: 'csaladi_veszhelyzet', title: 'A Családi Vészhelyzet', setupModal: setupFamilyEmergencyModal },
+            { id: 'aszaly', title: 'Az Aszály', setupModal: setupDroughtModal },
+            { id: 'portyazok', title: 'A Portyázók', setupModal: setupRaidersModal },
+            { id: 'fertozes', title: 'A Fertőzés', setupModal: setupInfectionModal },
+            { id: 'hosszu_tel', title: 'A Hosszú Tél', setupModal: setupLongWinterModal },
+            { id: 'ivohely_projekt', title: 'Az Ívóhely Projekt', setupModal: setupProjectModal },
+            { id: 'kozossegi_hozzajarulas', title: 'A Közösségi Hozzájárulás', setupModal: setupCommunityTaxModal },
+            { id: 'beteg_halasz', title: 'A Beteg Halász', setupModal: setupSickFisherModal }
+        ];
+
+        function createModalElements(title, bodyHTML, footerButtons) {
+            modalTitle.textContent = title;
+            modalBody.innerHTML = bodyHTML;
+            modalFooter.innerHTML = '';
+            footerButtons.forEach(btn => {
+                const button = document.createElement('button');
+                button.textContent = btn.text;
+                button.className = btn.classes;
+                button.onclick = btn.handler;
+                modalFooter.appendChild(button);
+            });
+            showModal();
+        }
+        
+        const modalCancelButton = { text: 'Mégse', classes: 'bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded', handler: hideModal };
+        
+        function getPlayerCheckboxes(filterFn = () => true) {
+            return gameState.players.filter(filterFn).map(p => `
+                <label class="flex items-center space-x-2"><input type="checkbox" class="rounded" name="selected_players" value="${p.id}"> <span>${p.name}</span></label>
+            `).join('');
+        }
+        
+        function setupRoyalTaxModal() {
+            const body = `
+                <p class="mb-4">Válaszd ki, mely halászok fizessenek dupla adót, és hány körön keresztül.</p>
+                <div class="space-y-2 mb-4">${getPlayerCheckboxes(p => !p.isBankrupt)}</div>
+                <label>Időtartam (kör): <input type="number" id="duration" value="1" min="1" class="w-full p-1 border rounded"></label>
+            `;
+            const buttons = [modalCancelButton, { text: 'Alkalmaz', classes: 'bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded', handler: applyRoyalTax }];
+            createModalElements('Királyi Adó Beállítása', body, buttons);
+        }
+
+        function applyRoyalTax() {
+            const duration = parseInt(document.getElementById('duration').value);
+            document.querySelectorAll('input[name="selected_players"]:checked').forEach(checkbox => {
+                const player = gameState.players.find(p => p.id == checkbox.value);
+                if(player) player.extraTaxRounds = duration;
+            });
+            updateActiveEffectsDisplay();
+            hideModal();
+        }
+        
+        function setupNewFisherModal() {
+            const body = `<p>Egy új halász érkezik a közösségbe. A fix költség a megnövekedett létszámhoz igazodik.</p>`;
+            const buttons = [modalCancelButton, { text: 'Hozzáadás', classes: 'bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded', handler: applyNewFisher }];
+            createModalElements('Új Halász Érkezik', body, buttons);
+        }
+
+        function applyNewFisher() {
+            const newId = gameState.players.length + 1;
+            gameState.players.push({ id: newId, name: `Halász #${newId} (Új)`, fish: 0, isBankrupt: false, isSick: false, rehabRounds: 0, extraTaxRounds: 0, sickRounds: 0 });
+            gameState.fixedCost = getFixedCost(gameState.players.length);
+            manualFixedCostInput.value = gameState.fixedCost;
+            setupPlayerInputs();
+            updateCharts();
+            hideModal();
+        }
+
+        function setupFamilyEmergencyModal() {
+            createModalElements('Családi Vészhelyzet', `<p>Ez egy szerepjáték esemény. Válassz ki egy játékost, és mondd neki: 'Most született meg az ötödik gyereked. A tél közeleg. Szükséged van extra halra a családodnak. A döntésedben ez most fontos szempont.' Nincs automatikus hatása.</p>`, [{ text: 'Értettem', classes: 'bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded', handler: hideModal }]);
+        }
+
+        function setupDroughtModal() {
+            const body = `<p class="mb-4">Add meg, hány körön keresztül legyen aszály (50%-os szaporulat).</p><label>Időtartam (kör): <input type="number" id="duration" value="3" min="1" class="w-full p-1 border rounded"></label>`;
+            const buttons = [modalCancelButton, { text: 'Alkalmaz', classes: 'bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded', handler: applyDrought }];
+            createModalElements('Aszály Beállítása', body, buttons);
+        }
+
+        function applyDrought() {
+            gameState.droughtRounds = parseInt(document.getElementById('duration').value);
+            updateActiveEffectsDisplay();
+            hideModal();
+        }
+        
+        function setupRaidersModal() {
+            const body = `<p class="mb-4">Válaszd ki, mely halászok vagyonát dézsmálják meg a portyázók (30% veszteség).</p><div class="space-y-2">${getPlayerCheckboxes(p => !p.isBankrupt)}</div>`;
+            const buttons = [modalCancelButton, { text: 'Alkalmaz', classes: 'bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded', handler: applyRaiders }];
+            createModalElements('Portyázók Támadása', body, buttons);
+        }
+
+        function applyRaiders() {
+            document.querySelectorAll('input[name="selected_players"]:checked').forEach(checkbox => {
+                const player = gameState.players.find(p => p.id == checkbox.value);
+                if(player) player.fish = Math.floor(player.fish * 0.7);
+            });
+            updateCharts();
+            hideModal();
+        }
+        
+        function setupInfectionModal() {
+            const body = `<p class="mb-4">Add meg, hány körön át érjen fele annyit a fogás.</p><label>Időtartam (kör): <input type="number" id="duration" value="1" min="1" class="w-full p-1 border rounded"></label>`;
+            const buttons = [modalCancelButton, { text: 'Alkalmaz', classes: 'bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded', handler: applyInfection }];
+            createModalElements('Fertőzés Beállítása', body, buttons);
+        }
+
+        function applyInfection() {
+            gameState.infectionRounds = parseInt(document.getElementById('duration').value);
+            updateActiveEffectsDisplay();
+            hideModal();
+        }
+        
+        function setupLongWinterModal() {
+             const body = `<p>Döntsd el, hogy ebben a körben befagy-e a tó.</p>`;
+             const buttons = [modalCancelButton, 
+                { text: 'Nem fagy be', classes: 'bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded', handler: () => { gameState.isFrozen = false; hideModal(); } },
+                { text: 'Befagy!', classes: 'bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded', handler: () => { gameState.isFrozen = true; updateActiveEffectsDisplay(); setupPlayerInputs(); hideModal(); } }
+             ];
+             createModalElements('Hosszú Tél', body, buttons);
+        }
+
+        function setupProjectModal() {
+            const body = `<p class="mb-4">Gyűjts össze 100 halat a halászoktól, hogy a tó kapacitása 120-ra nőjön.</p>` +
+                gameState.players.filter(p => !p.isBankrupt).map(p => `
+                    <div class="flex items-center justify-between mb-2">
+                        <label>${p.name} (vagyona: ${Math.floor(p.fish)})</label>
+                        <input type="number" data-player-id="${p.id}" value="0" min="0" max="${Math.floor(p.fish)}" class="w-24 p-1 border rounded contribution-input">
+                    </div>
+                `).join('') + `<p class="text-right font-bold mt-4">Összesen: <span id="total-contribution">0</span> / 100</p>`;
+            const buttons = [modalCancelButton, { text: 'Befektetés', classes: 'bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded', handler: applyProject }];
+            createModalElements('Ívóhely Projekt', body, buttons);
+            document.querySelector('.modal-body').addEventListener('input', e => {
+                if(e.target.classList.contains('contribution-input')) {
+                    let total = 0;
+                    document.querySelectorAll('.contribution-input').forEach(input => total += parseInt(input.value) || 0);
+                    document.getElementById('total-contribution').textContent = total;
+                }
+            });
+        }
+        
+        function applyProject() {
+            let total = 0;
+            const contributions = [];
+            document.querySelectorAll('.contribution-input').forEach(input => {
+                const amount = parseInt(input.value) || 0;
+                total += amount;
+                contributions.push({ id: input.dataset.playerId, amount });
+            });
+            if(total < 100) { alert('Nincs meg a 100 hal a befektetéshez!'); return; }
+
+            contributions.forEach(c => {
+                const player = gameState.players.find(p => p.id == c.id);
+                if(player) player.fish -= c.amount;
+            });
+            gameState.maxPond = 120;
+            pondHistoryChart.options.scales.y.max = gameState.maxPond;
+            updateCharts();
+            updateActiveEffectsDisplay();
+            hideModal();
+        }
+        
+        function setupCommunityTaxModal() {
+            const body = `<p class="mb-4">Add meg, hány körön át fizessen mindenki 10% adót.</p><label>Időtartam (kör): <input type="number" id="duration" value="1" min="1" class="w-full p-1 border rounded"></label>`;
+            const buttons = [modalCancelButton, { text: 'Alkalmaz', classes: 'bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded', handler: applyCommunityTax }];
+            createModalElements('Közösségi Hozzájárulás', body, buttons);
+        }
+        
+        function applyCommunityTax() {
+            gameState.communityTaxRounds = parseInt(document.getElementById('duration').value);
+            updateActiveEffectsDisplay();
+            hideModal();
+        }
+        
+        function setupSickFisherModal() {
+            const body = `<p class="mb-4">Válaszd ki a beteg halászt és a betegség időtartamát.</p>
+                <div class="space-y-2 mb-4">${getPlayerCheckboxes(p => !p.isBankrupt && !p.isSick).replace(/type="checkbox"/g, 'type="radio"')}</div>
+                <label>Időtartam (kör): <input type="number" id="duration" value="2" min="1" class="w-full p-1 border rounded"></label>`;
+            const buttons = [modalCancelButton, { text: 'Alkalmaz', classes: 'bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded', handler: applySickFisher }];
+            createModalElements('Beteg Halász Beállítása', body, buttons);
+        }
+        
+        function applySickFisher() {
+            const duration = parseInt(document.getElementById('duration').value);
+            const selectedPlayer = document.querySelector('input[name="selected_players"]:checked');
+            if(selectedPlayer) {
+                const player = gameState.players.find(p => p.id == selectedPlayer.value);
+                if(player) {
+                    player.isSick = true;
+                    player.sickRounds = duration;
+                }
+            }
+            setupPlayerInputs();
+            updateActiveEffectsDisplay();
+            hideModal();
+        }
+
+        // Core Game Logic
+        function populateChaosCards() {
+            chaosCardSelect.innerHTML = '';
+            chaosCards.forEach(card => {
+                const option = document.createElement('option');
+                option.value = card.id;
+                option.textContent = card.title;
+                chaosCardSelect.appendChild(option);
+            });
+        }
+
+        function showModal() { chaosModal.classList.remove('opacity-0', 'pointer-events-none'); chaosModal.querySelector('div > div').classList.remove('scale-95'); }
+        function hideModal() { chaosModal.classList.add('opacity-0', 'pointer-events-none'); chaosModal.querySelector('div > div').classList.add('scale-95'); }
+        
+        function getFixedCost(playerCount) { if (playerCount <= 5) return 5; if (playerCount <= 7) return 4; return 3; }
+        
+        function initializeCharts() {
+            const playerWealthCtx = document.getElementById('player-wealth-chart').getContext('2d');
+            playerWealthChart = new Chart(playerWealthCtx, { type: 'bar', data: { labels: [], datasets: [{ label: 'Halak száma', data: [], backgroundColor: 'rgba(54, 162, 235, 0.6)', borderColor: 'rgba(54, 162, 235, 1)', borderWidth: 1 }] }, options: { maintainAspectRatio: false, scales: { y: { beginAtZero: true, title: { display: true, text: 'Halak száma' }}}, plugins: { legend: { display: false }}}});
+            const pondHistoryCtx = document.getElementById('pond-history-chart').getContext('2d');
+            pondHistoryChart = new Chart(pondHistoryCtx, { type: 'line', data: { labels: [], datasets: [{ label: 'Halak a tóban', data: [], fill: false, borderColor: 'rgba(75, 192, 192, 1)', tension: 0.1 }] }, options: { maintainAspectRatio: false, scales: { y: { beginAtZero: true, max: 120, title: { display: true, text: 'Halak száma a tóban' }}, x: { title: { display: true, text: 'Kör' }}}, plugins: { legend: { display: false }}}});
+        }
+
+        function initGame() {
+            const playerCount = parseInt(playerCountInput.value);
+            if (playerCount < 5 || playerCount > 10) { alert("A halászok száma 5 és 10 között kell, hogy legyen."); return; }
+            gameState = {
+                round: 1, pond: 100, bank: 0, fixedCost: getFixedCost(playerCount), maxPond: 100,
+                players: Array.from({ length: playerCount }, (_, i) => ({ id: i + 1, name: `Halász #${i + 1}`, fish: 0, isBankrupt: false, isSick: false, sickRounds: 0, rehabRounds: 0, extraTaxRounds: 0 })),
+                history: { pond: [100] },
+                droughtRounds: 0, infectionRounds: 0, communityTaxRounds: 0, isFrozen: false
+            };
+            manualFixedCostInput.value = gameState.fixedCost;
+            setupPlayerInputs();
+            updateDisplay();
+            updateCharts();
+            updateActiveEffectsDisplay();
+            setupScreen.classList.add('hidden');
+            gameScreen.classList.remove('hidden');
+        }
+
+        function setupPlayerInputs() {
+            playerInputsContainer.innerHTML = '';
+            gameState.players.forEach(player => {
+                const div = document.createElement('div');
+                let statuses = [];
+                if(player.rehabRounds > 0) statuses.push(`+1 adó ${player.rehabRounds} k.`);
+                if(player.extraTaxRounds > 0) statuses.push(`Dupla adó ${player.extraTaxRounds} k.`);
+                if(player.isSick) statuses.push(`Beteg ${player.sickRounds} k.`);
+                
+                let labelHTML = `<label class="flex justify-between items-center text-sm font-medium"><span class="${player.isBankrupt ? 'text-gray-400' : (player.isSick ? 'text-red-500' : 'text-gray-700')}">${player.name}</span>`;
+                if(statuses.length > 0) labelHTML += `<span class="text-xs text-blue-600 font-semibold ml-2">(${statuses.join(', ')})</span>`;
+                if (player.isBankrupt) labelHTML += `<button class="text-xs bg-blue-500 text-white py-1 px-2 rounded hover:bg-blue-600" onclick="revivePlayer(${player.id})">Visszahozás</button>`;
+                labelHTML += `</label>`;
+                
+                div.innerHTML = labelHTML + `<input type="number" id="player-${player.id}-catch" min="0" value="0" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2" ${player.isBankrupt || player.isSick || gameState.isFrozen ? 'disabled' : ''}>`;
+                playerInputsContainer.appendChild(div);
+            });
+        }
+        
+        window.revivePlayer = function(playerId) {
+            const player = gameState.players.find(p => p.id === playerId);
+            if (player && player.isBankrupt) { player.isBankrupt = false; player.fish = 0; player.rehabRounds = 5; setupPlayerInputs(); updateCharts(); }
+        }
+
+        function endRound() {
+            let totalCatch = 0;
+            const catches = [];
+            gameState.players.forEach(player => { if (!player.isBankrupt && !player.isSick && !gameState.isFrozen) { totalCatch += parseInt(document.getElementById(`player-${player.id}-catch`).value) || 0; } });
+            if (totalCatch > gameState.pond) { alert(`Hiba: Összesen ${totalCatch} halat szeretnétek kivenni, de csak ${Math.floor(gameState.pond)} van a tóban!`); return; }
+
+            gameState.players.forEach(player => { if (!player.isBankrupt && !player.isSick && !gameState.isFrozen) { const fishCaught = parseInt(document.getElementById(`player-${player.id}-catch`).value) || 0; gameState.pond -= fishCaught; player.fish += (gameState.infectionRounds > 0 ? fishCaught / 2 : fishCaught); } });
+            
+            gameState.players.forEach(player => {
+                if (player.isBankrupt) return;
+                let cost = 0;
+                if (gameState.communityTaxRounds > 0) { cost = Math.ceil(player.fish * 0.1); if (player.fish < 5) cost = 0; else if (player.fish <= 10) cost = Math.max(cost, 1); } 
+                else { cost = gameState.fixedCost * (player.extraTaxRounds > 0 ? 2 : 1) + (player.rehabRounds > 0 ? 1 : 0); }
+                if(!player.isSick) player.fish -= cost; else player.fish -= gameState.fixedCost; // Sick players still pay base tax
+                gameState.bank += cost;
+                if (player.fish < 0) { alert(`${player.name} csődbe ment!`); player.isBankrupt = true; }
+            });
+            
+            const regenerationModifier = gameState.droughtRounds > 0 ? 1.5 : 2;
+            gameState.pond = Math.min(gameState.maxPond, gameState.pond * regenerationModifier);
+            gameState.round++;
+            gameState.history.pond.push(gameState.pond);
+            
+            // Decrement round counters for effects
+            if(gameState.droughtRounds > 0) gameState.droughtRounds--;
+            if(gameState.infectionRounds > 0) gameState.infectionRounds--;
+            if(gameState.communityTaxRounds > 0) gameState.communityTaxRounds--;
+            gameState.isFrozen = false;
+            gameState.players.forEach(p => {
+                if(p.rehabRounds > 0) p.rehabRounds--;
+                if(p.extraTaxRounds > 0) p.extraTaxRounds--;
+                if(p.sickRounds > 0) p.sickRounds--;
+                if(p.isSick && p.sickRounds <= 0) p.isSick = false;
+            });
+            
+            setupPlayerInputs();
+            updateDisplay();
+            updateCharts();
+            updateActiveEffectsDisplay();
+        }
+        
+        function updateDisplay() {
+            currentRoundDisplay.textContent = gameState.round;
+            pondStatusDisplay.textContent = Math.floor(gameState.pond);
+            bankStatusDisplay.textContent = Math.floor(gameState.bank);
+            fixedCostDisplay.textContent = gameState.fixedCost;
+        }
+
+        function updateCharts() {
+            playerWealthChart.data.labels = gameState.players.map(p => p.name);
+            playerWealthChart.data.datasets[0].data = gameState.players.map(p => p.fish);
+            playerWealthChart.data.datasets[0].backgroundColor = gameState.players.map(p => p.isBankrupt ? 'rgba(156, 163, 175, 0.5)' : 'rgba(54, 162, 235, 0.6)');
+            playerWealthChart.update();
+            
+            pondHistoryChart.data.labels = Array.from({ length: gameState.history.pond.length }, (_, i) => `${i}`);
+            pondHistoryChart.data.datasets[0].data = gameState.history.pond.map(p => Math.floor(p));
+            pondHistoryChart.options.scales.y.max = gameState.maxPond;
+            pondHistoryChart.update();
+        }
+        
+        function updateActiveEffectsDisplay() {
+            let effects = [];
+            if(gameState.droughtRounds > 0) effects.push(`Aszály (${gameState.droughtRounds} k.)`);
+            if(gameState.infectionRounds > 0) effects.push(`Fertőzés (${gameState.infectionRounds} k.)`);
+            if(gameState.communityTaxRounds > 0) effects.push(`10% adó (${gameState.communityTaxRounds} k.)`);
+            if(gameState.isFrozen) effects.push('Befagyott tó!');
+            if(gameState.maxPond > 100) effects.push('Tó fejlesztve (Max 120)');
+            
+            if(effects.length > 0) {
+                activeEffectDisplay.innerHTML = effects.map(e => `<div>${e}</div>`).join('');
+                activeEffectContainer.classList.remove('hidden');
+            } else {
+                activeEffectContainer.classList.add('hidden');
+            }
+        }
+
+        function updateFixedCost() {
+            const newCost = parseInt(manualFixedCostInput.value);
+            if (!isNaN(newCost) && newCost >= 0) { gameState.fixedCost = newCost; updateDisplay(); }
+        }
+
+        function resetGame() { if (confirm("Biztosan új játékot szeretnél kezdeni?")) { gameScreen.classList.add('hidden'); setupScreen.classList.remove('hidden'); } }
+        
+        // Event Listeners
+        triggerChaosBtn.addEventListener('click', () => {
+            const card = chaosCards.find(c => c.id === chaosCardSelect.value);
+            if (card && card.setupModal) card.setupModal();
+            chaosCardSelect.value = 'none';
+        });
+        
+        manualFixedCostInput.addEventListener('input', updateFixedCost);
+        startGameBtn.addEventListener('click', initGame);
+        endGameBtn.addEventListener('click', endRound);
+        newGameBtn.addEventListener('click', resetGame);
+
+        populateChaosCards();
+        initializeCharts();
+    </script>
+</body>
+</html>
