@@ -1,0 +1,2 @@
+# halasto
+Szimuláció
