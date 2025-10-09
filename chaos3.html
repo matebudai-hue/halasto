@@ -1,0 +1,1584 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Halastó Szimulációs Műszerfal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8f9fa; }
+        .chart-container { position: relative; width: 100%; max-width: 800px; margin: auto; height: 280px; max-height: 35vh; }
+        @media (min-width: 768px) { .chart-container { height: 320px; } }
+        .number-display { font-size: 2.2rem; line-height: 1.1; }
+        .modal { transition: opacity 0.3s ease; }
+        .modal-body { max-height: 60vh; overflow-y: auto; }
+        .card-warning {
+            box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.45);
+            animation: pulseGlow 1.8s ease-in-out infinite;
+        }
+        @keyframes pulseGlow {
+            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.55); }
+            70% { box-shadow: 0 0 0 18px rgba(239, 68, 68, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <div id="app" class="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
+        <header class="text-center mb-8">
+            <h1 class="text-3xl md:text-4xl font-bold text-gray-700">Halastó Szimulációs Műszerfal</h1>
+            <p class="text-gray-500 mt-2">A közlegelők tragédiája interaktív szimulációja</p>
+        </header>
+
+        <div id="setup-screen" class="max-w-md mx-auto bg-white p-8 rounded-xl shadow-lg">
+            <h2 class="text-2xl font-bold text-center mb-6">Játék Beállítása</h2>
+            <div class="space-y-4">
+                <div>
+                    <label for="player-count" class="block text-sm font-medium text-gray-700">Halászok száma (5-10):</label>
+                    <input type="number" id="player-count" name="player-count" min="5" max="10" value="5" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2">
+                </div>
+                <button id="start-game-btn" type="button" onclick="initGame()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg">Játék Indítása</button>
+            </div>
+        </div>
+
+        <div id="game-screen" class="hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div class="lg:col-span-1 bg-white p-6 rounded-xl shadow-lg space-y-6" data-export-block>
+                    <h2 class="text-2xl font-bold text-center">Vezérlőpult</h2>
+                    <div>
+                        <h3 class="text-lg font-semibold mb-2">Kör #<span id="current-round">1</span> &bull; <span id="current-day" class="text-indigo-600 font-semibold">Hétfő</span></h3>
+                        <p class="text-sm text-gray-600 mb-4">Add meg a kifogott halak számát.</p>
+                        <div id="player-inputs" class="space-y-3"></div>
+                    </div>
+                    <div class="border-t pt-5 space-y-3">
+                        <div>
+                            <label for="manual-fixed-cost" class="block text-sm font-medium text-gray-700">Fix Költség Módosítása:</label>
+                            <input type="number" id="manual-fixed-cost" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2">
+                        </div>
+                    </div>
+                    <div class="border-t pt-5 space-y-4">
+                        <div>
+                            <h3 class="text-lg font-semibold mb-2">Kör Időzítő</h3>
+                            <div class="space-y-2">
+                                <select id="timer-duration" class="w-full rounded-md border-gray-300 shadow-sm p-2">
+                                    <option value="1">1 perc</option>
+                                    <option value="2">2 perc</option>
+                                    <option value="3" selected>3 perc</option>
+                                    <option value="4">4 perc</option>
+                                    <option value="5">5 perc</option>
+                                </select>
+                                <div class="flex items-center justify-between bg-gray-100 rounded-md px-3 py-2">
+                                    <span id="timer-display" class="text-xl font-semibold text-gray-700">03:00</span>
+                                    <label class="flex items-center space-x-1 text-sm text-gray-600">
+                                        <input type="checkbox" id="timer-mute" class="rounded">
+                                        <span>Némítás</span>
+                                    </label>
+                                </div>
+                                <div class="flex space-x-2">
+                                    <button id="timer-toggle-btn" type="button" class="flex-1 bg-green-500 hover:bg-green-600 text-white font-semibold py-1 rounded-md">Start</button>
+                                    <button id="timer-reset-btn" type="button" class="flex-1 bg-gray-500 hover:bg-gray-600 text-white font-semibold py-1 rounded-md">Reset</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="border-t pt-5">
+                        <h3 class="text-lg font-semibold mb-2">Váratlan esemény</h3>
+                        <div class="space-y-3">
+                            <select id="chaos-card-select" class="block w-full rounded-md border-gray-300 shadow-sm p-2"></select>
+                            <button id="trigger-chaos-btn" type="button" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-2 px-4 rounded-lg">Esemény Beállítása</button>
+                        </div>
+                    </div>
+                    <div class="space-y-3 border-t pt-5">
+                        <button id="end-round-btn" type="button" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg">Kör Lezárása</button>
+                        <button id="undo-btn" type="button" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg disabled:opacity-50" disabled>Visszavonás</button>
+                        <label class="flex items-center space-x-2 text-sm text-gray-600 px-2">
+                            <input type="checkbox" id="include-log-pdf" class="rounded">
+                            <span>Játéknapló csatolása</span>
+                        </label>
+                        <button id="export-pdf-btn" type="button" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg">PDF Export</button>
+                        <button id="new-game-btn" type="button" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg">Új Játék</button>
+                    </div>
+                </div>
+                <div class="lg:col-span-2 space-y-8">
+                    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 text-center">
+                        <div id="pond-card" class="bg-blue-100 text-blue-800 p-4 rounded-xl shadow-md transition-shadow">
+                            <h3 class="text-md font-semibold">Halak a tóban</h3>
+                            <p id="pond-status" class="font-bold number-display">100</p>
+                        </div>
+                        <div class="bg-yellow-100 text-yellow-800 p-4 rounded-xl shadow-md">
+                            <h3 class="text-md font-semibold">Bank</h3>
+                            <p id="bank-status" class="font-bold number-display">0</p>
+                        </div>
+                        <div class="bg-gray-200 text-gray-800 p-4 rounded-xl shadow-md">
+                            <h3 class="text-md font-semibold">Fix Költség</h3>
+                            <p id="fixed-cost-display" class="font-bold number-display">0</p>
+                        </div>
+                        <div class="bg-emerald-100 text-emerald-800 p-4 rounded-xl shadow-md">
+                            <h3 class="text-md font-semibold">Max fogás növekedéshez</h3>
+                            <p id="growth-threshold-display" class="font-bold number-display">0</p>
+                        </div>
+                        <div class="bg-indigo-100 text-indigo-800 p-4 rounded-xl shadow-md">
+                            <h3 class="text-md font-semibold">Max növekedéshez hagyható fogás</h3>
+                            <p id="max-growth-display" class="font-bold number-display">0</p>
+                        </div>
+                        <div id="active-effect-container" class="bg-purple-100 text-purple-800 p-4 rounded-xl shadow-md hidden">
+                            <h3 class="text-md font-semibold">Aktív Hatások</h3>
+                            <div id="active-effect-display" class="font-bold text-sm leading-tight mt-2 text-left"></div>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-lg" data-export-block>
+                        <h3 class="text-xl font-bold text-center mb-4">Halászok Vagyona</h3>
+                        <div class="chart-container"><canvas id="player-wealth-chart"></canvas></div>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-lg" data-export-block>
+                        <h3 class="text-xl font-bold text-center mb-4">Tó Állapota Körönként</h3>
+                        <div class="chart-container"><canvas id="pond-history-chart"></canvas></div>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-lg" data-export-block>
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-xl font-bold text-center">Eseménynapló</h3>
+                            <button id="toggle-log-panel" type="button" class="text-sm font-semibold text-indigo-600 hover:text-indigo-700">Játéknapló</button>
+                        </div>
+                        <ul id="event-log" class="space-y-2 max-h-64 overflow-y-auto text-sm text-gray-700"></ul>
+                    </div>
+                    <div id="fairshare-container" class="bg-white p-6 rounded-xl shadow-lg" data-export-block>
+                        <h3 class="text-xl font-bold text-center mb-4">Fenntarthatósági és Fair-share Áttekintés</h3>
+                        <div class="flex flex-wrap justify-center gap-3 text-xs text-gray-500 mb-4">
+                            <span><span class="inline-block w-3 h-3 rounded-sm bg-green-500 mr-1"></span>≤100%</span>
+                            <span><span class="inline-block w-3 h-3 rounded-sm bg-yellow-400 mr-1"></span>100–130%</span>
+                            <span><span class="inline-block w-3 h-3 rounded-sm bg-orange-400 mr-1"></span>130–160%</span>
+                            <span><span class="inline-block w-3 h-3 rounded-sm bg-red-500 mr-1"></span>>160%</span>
+                        </div>
+                        <div class="text-center text-gray-500">Még nincs lezárt kör.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="flash-overlay" class="fixed inset-0 bg-white opacity-0 pointer-events-none transition-opacity duration-200 z-40"></div>
+
+    <aside id="log-panel" class="fixed top-0 right-0 h-full w-full sm:w-96 bg-white shadow-2xl transform translate-x-full transition-transform duration-300 z-50 flex flex-col">
+        <div class="flex items-center justify-between px-5 py-4 border-b">
+            <h2 class="text-lg font-semibold text-gray-700">Játéknapló</h2>
+            <button id="close-log-panel" type="button" class="text-sm font-semibold text-indigo-600 hover:text-indigo-700">Bezárás</button>
+        </div>
+        <div id="log-entries" class="flex-1 overflow-y-auto px-5 py-4 space-y-4 text-sm text-gray-700"></div>
+    </aside>
+
+    <div id="chaos-modal" class="modal fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50 opacity-0 pointer-events-none">
+        <div class="bg-white rounded-2xl shadow-2xl p-6 sm:p-8 max-w-lg w-full transform transition-transform duration-300 scale-95">
+            <h2 id="modal-title" class="text-2xl font-bold mb-4 text-gray-800"></h2>
+            <div id="modal-body" class="modal-body mb-6 text-gray-600"></div>
+            <div id="modal-footer" class="flex justify-end space-x-3"></div>
+        </div>
+    </div>
+
+    <script>
+        const setupScreen = document.getElementById('setup-screen');
+        const gameScreen = document.getElementById('game-screen');
+        const playerCountInput = document.getElementById('player-count');
+        const startGameBtn = document.getElementById('start-game-btn');
+        const endRoundBtn = document.getElementById('end-round-btn');
+        const undoBtn = document.getElementById('undo-btn');
+        const newGameBtn = document.getElementById('new-game-btn');
+        const exportPdfBtn = document.getElementById('export-pdf-btn');
+        const playerInputsContainer = document.getElementById('player-inputs');
+        const manualFixedCostInput = document.getElementById('manual-fixed-cost');
+        const currentRoundDisplay = document.getElementById('current-round');
+        const currentDayDisplay = document.getElementById('current-day');
+        const pondStatusDisplay = document.getElementById('pond-status');
+        const bankStatusDisplay = document.getElementById('bank-status');
+        const fixedCostDisplay = document.getElementById('fixed-cost-display');
+        const growthThresholdDisplay = document.getElementById('growth-threshold-display');
+        const maxGrowthDisplay = document.getElementById('max-growth-display');
+        const pondCard = document.getElementById('pond-card');
+        const activeEffectContainer = document.getElementById('active-effect-container');
+        const activeEffectDisplay = document.getElementById('active-effect-display');
+        const chaosCardSelect = document.getElementById('chaos-card-select');
+        const triggerChaosBtn = document.getElementById('trigger-chaos-btn');
+        const chaosModal = document.getElementById('chaos-modal');
+        const modalTitle = document.getElementById('modal-title');
+        const modalBody = document.getElementById('modal-body');
+        const modalFooter = document.getElementById('modal-footer');
+        const fairshareContainer = document.getElementById('fairshare-container');
+        const eventLogList = document.getElementById('event-log');
+
+        const timerDurationSelect = document.getElementById('timer-duration');
+        const timerDisplay = document.getElementById('timer-display');
+        const timerToggleBtn = document.getElementById('timer-toggle-btn');
+        const timerResetBtn = document.getElementById('timer-reset-btn');
+        const timerMuteToggle = document.getElementById('timer-mute');
+        const includeLogCheckbox = document.getElementById('include-log-pdf');
+        const flashOverlay = document.getElementById('flash-overlay');
+        const logPanel = document.getElementById('log-panel');
+        const logEntries = document.getElementById('log-entries');
+        const toggleLogPanelBtn = document.getElementById('toggle-log-panel');
+        const closeLogPanelBtn = document.getElementById('close-log-panel');
+        const triggerMarketBtn = document.getElementById('trigger-market-btn');
+
+        const dayNames = ['Hétfő', 'Kedd', 'Szerda', 'Csütörtök', 'Péntek', 'Szombat', 'Vasárnap'];
+        const undoStack = [];
+        const MAX_UNDO = 20;
+        const MAX_PDF_LENGTH = 14000;
+
+        let gameState = {};
+        let playerWealthChart, pondHistoryChart;
+        let timerSeconds = 180;
+        let timerDurationSeconds = 180;
+        let timerId = null;
+        let audioContext = null;
+        let appInitialized = false;
+        let gameLog = [];
+        let logEntryId = 0;
+
+        const chaosCards = [
+            { id: 'none', title: 'Válassz egy eseményt...' },
+            { id: 'random', title: 'Véletlen esemény' },
+            { id: 'kiralyi_ado', title: 'A Királyi Adó', setupModal: setupRoyalTaxModal },
+            { id: 'kiralyi_sarc', title: 'Rendkívüli Királyi Sarc', setupModal: setupRoyalLevyModal },
+            { id: 'idegen_halasz', title: 'Az Idegen Halász', setupModal: setupNewFisherModal },
+            { id: 'csaladi_veszhelyzet', title: 'A Családi Vészhelyzet', setupModal: setupFamilyEmergencyModal },
+            { id: 'aszaly', title: 'Az Aszály', setupModal: setupDroughtModal },
+            { id: 'portyazok', title: 'A Portyázók', setupModal: setupRaidersModal },
+            { id: 'fertozes', title: 'A Fertőzés', setupModal: setupInfectionModal },
+            { id: 'hosszu_tel', title: 'A Hosszú Tél', setupModal: setupLongWinterModal },
+            { id: 'ivohely_projekt', title: 'Az Ívóhely Projekt', setupModal: setupProjectModal },
+            { id: 'kozossegi_hozzajarulas', title: 'A Közösségi Hozzájárulás', setupModal: setupCommunityTaxModal },
+            { id: 'beteg_halasz', title: 'A Beteg Halász', setupModal: setupSickFisherModal }
+        ];
+
+        function deepClone(obj) {
+            if (typeof structuredClone === 'function') {
+                return structuredClone(obj);
+            }
+            return JSON.parse(JSON.stringify(obj));
+        }
+
+        function escapeHtml(str) {
+            if (typeof str !== 'string') return '';
+            return str
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        function pushUndo() {
+            undoStack.push(deepClone(gameState));
+            if (undoStack.length > MAX_UNDO) {
+                undoStack.shift();
+            }
+            undoBtn.disabled = false;
+        }
+
+        function applyState(state) {
+            gameState = deepClone(state);
+            if (!Array.isArray(gameState.gameLog)) {
+                gameState.gameLog = [];
+            }
+            gameLog = gameState.gameLog;
+            logEntryId = gameLog.reduce((max, entry) => Math.max(max, entry.id || 0), 0);
+            renderLog();
+            setupPlayerInputs();
+            updateAllDisplays();
+            undoBtn.disabled = undoStack.length === 0;
+        }
+
+        function undoLast() {
+            if (!undoStack.length) return;
+            const prev = undoStack.pop();
+            applyState(prev);
+            undoBtn.disabled = undoStack.length === 0;
+        }
+
+        function createModalElements(title, bodyHTML, footerButtons) {
+            modalTitle.textContent = title;
+            modalBody.innerHTML = bodyHTML;
+            modalFooter.innerHTML = '';
+            footerButtons.forEach(btn => {
+                const button = document.createElement('button');
+                button.textContent = btn.text;
+                button.className = btn.classes;
+                button.onclick = btn.handler;
+                modalFooter.appendChild(button);
+            });
+            showModal();
+        }
+
+        const modalCancelButton = { text: 'Mégse', classes: 'bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded', handler: hideModal };
+
+        function getPlayerCheckboxes(filterFn = () => true, type = 'checkbox') {
+            return gameState.players.filter(filterFn).map(p => `
+                <label class="flex items-center space-x-2"><input type="${type}" class="rounded" name="selected_players" value="${p.id}"> <span>${p.name}</span></label>
+            `).join('');
+        }
+
+        function createLotteryButton(container, { selector = 'input[name="selected_players"]', count } = {}) {
+            if (!container) return;
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'inline-flex items-center space-x-1 text-sm font-semibold text-indigo-600 hover:text-indigo-700 mb-3';
+            button.innerHTML = '<span aria-hidden="true">🎲</span><span>Sorsolás</span>';
+            container.parentElement.insertBefore(button, container);
+            button.addEventListener('click', () => {
+                const inputs = Array.from(container.querySelectorAll(selector)).filter(input => !input.disabled);
+                if (!inputs.length) return;
+                const type = inputs[0].type;
+                const desired = count ?? Number(container.dataset.lotteryCount || (type === 'radio' ? 1 : 1));
+                if (type === 'radio') {
+                    const choice = inputs[Math.floor(Math.random() * inputs.length)];
+                    inputs.forEach(input => { input.checked = input === choice; });
+                } else {
+                    inputs.forEach(input => { input.checked = false; });
+                    const pool = [...inputs];
+                    for (let i = pool.length - 1; i > 0; i--) {
+                        const j = Math.floor(Math.random() * (i + 1));
+                        [pool[i], pool[j]] = [pool[j], pool[i]];
+                    }
+                    pool.slice(0, Math.min(desired, pool.length)).forEach(input => { input.checked = true; });
+                }
+            });
+        }
+        function setupRoyalTaxModal() {
+            const body = `
+                <p class="mb-4">Válaszd ki, mely halászok fizessenek dupla adót, és hány körön keresztül.</p>
+                <div class="space-y-2 mb-4 player-selection">${getPlayerCheckboxes(p => !p.isBankrupt)}</div>
+                <label>Időtartam (kör): <input type="number" id="duration" value="1" min="1" class="w-full p-1 border rounded"></label>
+            `;
+            const buttons = [modalCancelButton, { text: 'Alkalmaz', classes: 'bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded', handler: applyRoyalTax }];
+            createModalElements('Királyi Adó Beállítása', body, buttons);
+            createLotteryButton(modalBody.querySelector('.player-selection'));
+        }
+
+        function applyRoyalTax() {
+            const duration = parseInt(document.getElementById('duration').value);
+            document.querySelectorAll('input[name="selected_players"]:checked').forEach(checkbox => {
+                const player = gameState.players.find(p => p.id == checkbox.value);
+                if (player) player.extraTaxRounds = duration;
+            });
+            logEvent('Királyi Adó', 'Dupla adó kivetve a kiválasztott halászokra.');
+            updateActiveEffectsDisplay();
+            hideModal();
+        }
+
+        function setupRoyalLevyModal() {
+            const totalWealth = gameState.players.reduce((sum, p) => sum + Math.max(0, p.fish), 0);
+            const required = Math.round(totalWealth * 0.25);
+            const body = `
+                <p class="mb-4">A király rendkívüli sarcot vet ki. Összesen <strong>${required}</strong> hal értéket kell befizetni (25% az összesített vagyonból).</p>
+                <div id="levy-inputs" class="space-y-3">
+                    ${gameState.players.filter(p => !p.isBankrupt).map(player => `
+                        <div class="flex items-center justify-between">
+                            <label class="text-sm">${player.name} <span class="text-gray-400">(vagyon: ${Math.floor(player.fish)})</span></label>
+                            <input type="number" min="0" max="${Math.floor(player.fish)}" value="0" data-player-id="${player.id}" class="w-24 p-1 border rounded levy-input">
+                        </div>
+                    `).join('')}
+                </div>
+                <p class="text-right font-semibold mt-4">Összegyűlt: <span id="levy-total">0</span> / ${required}</p>
+            `;
+            const buttons = [modalCancelButton, { text: 'Befizetés rögzítése', classes: 'bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded', handler: () => applyRoyalLevy(required) }];
+            createModalElements('Rendkívüli Királyi Sarc', body, buttons);
+            modalBody.querySelectorAll('.levy-input').forEach(input => {
+                input.addEventListener('input', () => {
+                    let total = 0;
+                    modalBody.querySelectorAll('.levy-input').forEach(i => total += parseInt(i.value) || 0);
+                    document.getElementById('levy-total').textContent = total;
+                });
+            });
+        }
+
+        function applyRoyalLevy(required) {
+            let total = 0;
+            const contributions = [];
+            modalBody.querySelectorAll('.levy-input').forEach(input => {
+                const amount = parseInt(input.value) || 0;
+                total += amount;
+                contributions.push({ id: Number(input.dataset.playerId), amount });
+            });
+            if (total !== required) {
+                alert(`A befizetések összege pontosan ${required} kell legyen.`);
+                return;
+            }
+            contributions.forEach(({ id, amount }) => {
+                const player = gameState.players.find(p => p.id === id);
+                if (player) {
+                    player.fish -= amount;
+                }
+            });
+            gameState.bank += required;
+            logEvent('Rendkívüli sarc', `A halászok összesen ${required} hal értéket fizettek be.`);
+            updateAllDisplays();
+            hideModal();
+        }
+
+        function setupNewFisherModal() {
+            const body = `<p>Egy új halász érkezik a közösségbe. A fix költség a megnövekedett létszámhoz igazodik.</p>`;
+            const buttons = [modalCancelButton, { text: 'Hozzáadás', classes: 'bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded', handler: applyNewFisher }];
+            createModalElements('Új Halász Érkezik', body, buttons);
+        }
+
+        function applyNewFisher() {
+            const newId = gameState.players.length + 1;
+            const wealthHistory = Array.from({ length: gameState.round }, () => 0);
+            gameState.players.push({
+                id: newId,
+                name: `Halász #${newId} (Új)`,
+                fish: 0,
+                isBankrupt: false,
+                isSick: false,
+                rehabRounds: 0,
+                extraTaxRounds: 0,
+                sickRounds: 0,
+                lastCatch: 0,
+                history: { wealth: wealthHistory }
+            });
+            gameState.fixedCost = getFixedCost(gameState.players.length);
+            manualFixedCostInput.value = gameState.fixedCost;
+            logEvent('Új halász', `${newId}. halász csatlakozott a játékhoz.`);
+            setupPlayerInputs();
+            updateAllDisplays();
+            hideModal();
+        }
+
+        function setupFamilyEmergencyModal() {
+            createModalElements('Családi Vészhelyzet', `<p>Ez egy szerepjáték esemény. Válassz ki egy játékost, és mondd neki: "Most született meg az ötödik gyereked. A tél közeleg. Szükséged van extra halra a családodnak. A döntésedben ez most fontos szempont." Nincs automatikus hatása.</p>`, [{ text: 'Értettem', classes: 'bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded', handler: hideModal }]);
+        }
+
+        function setupDroughtModal() {
+            const body = `<p class="mb-4">Add meg, hány körön keresztül legyen aszály (50%-os szaporulat).</p><label>Időtartam (kör): <input type="number" id="duration" value="3" min="1" class="w-full p-1 border rounded"></label>`;
+            const buttons = [modalCancelButton, { text: 'Alkalmaz', classes: 'bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded', handler: applyDrought }];
+            createModalElements('Aszály Beállítása', body, buttons);
+        }
+
+        function applyDrought() {
+            gameState.droughtRounds = parseInt(document.getElementById('duration').value);
+            logEvent('Aszály', `${gameState.droughtRounds} körön át csökken a szaporulat.`);
+            updateActiveEffectsDisplay();
+            hideModal();
+        }
+
+        function setupRaidersModal() {
+            const body = `<p class="mb-4">Válaszd ki, mely halászok vagyonát dézsmálják meg a portyázók (30% veszteség).</p><div class="space-y-2 player-selection">${getPlayerCheckboxes(p => !p.isBankrupt)}</div>`;
+            const buttons = [modalCancelButton, { text: 'Alkalmaz', classes: 'bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded', handler: applyRaiders }];
+            createModalElements('Portyázók Támadása', body, buttons);
+            createLotteryButton(modalBody.querySelector('.player-selection'));
+        }
+
+        function applyRaiders() {
+            document.querySelectorAll('input[name="selected_players"]:checked').forEach(checkbox => {
+                const player = gameState.players.find(p => p.id == checkbox.value);
+                if (player) player.fish = Math.floor(player.fish * 0.7);
+            });
+            logEvent('Portyázók', 'A kiválasztott halászok vagyonának 30%-a elveszett.');
+            updateAllDisplays();
+            hideModal();
+        }
+
+        function setupInfectionModal() {
+            const body = `<p class="mb-4">Add meg, hány körön át érjen fele annyit a fogás.</p><label>Időtartam (kör): <input type="number" id="duration" value="1" min="1" class="w-full p-1 border rounded"></label>`;
+            const buttons = [modalCancelButton, { text: 'Alkalmaz', classes: 'bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded', handler: applyInfection }];
+            createModalElements('Fertőzés Beállítása', body, buttons);
+        }
+
+        function applyInfection() {
+            gameState.infectionRounds = parseInt(document.getElementById('duration').value);
+            logEvent('Fertőzés', `${gameState.infectionRounds} körön át feleződik a fogás.`);
+            updateActiveEffectsDisplay();
+            hideModal();
+        }
+
+        function setupLongWinterModal() {
+            const body = `<p>Döntsd el, hogy ebben a körben befagy-e a tó.</p>`;
+            const buttons = [
+                modalCancelButton,
+                { text: 'Nem fagy be', classes: 'bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded', handler: () => { gameState.isFrozen = false; logEvent('Hosszú tél', 'A tó nem fagyott be.'); hideModal(); } },
+                { text: 'Befagy!', classes: 'bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded', handler: () => { gameState.isFrozen = true; updateActiveEffectsDisplay(); logEvent('Hosszú tél', 'A tó ebben a körben befagyott.'); setupPlayerInputs(); hideModal(); } }
+            ];
+            createModalElements('Hosszú Tél', body, buttons);
+        }
+
+        function setupProjectModal() {
+            const body = `<p class="mb-4">Gyűjts össze 100 halat a halászoktól, hogy a tó kapacitása 120-ra nőjön.</p>` +
+                gameState.players.filter(p => !p.isBankrupt).map(p => `
+                    <div class="flex items-center justify-between mb-2">
+                        <label>${p.name} (vagyona: ${Math.floor(p.fish)})</label>
+                        <input type="number" data-player-id="${p.id}" value="0" min="0" max="${Math.floor(p.fish)}" class="w-24 p-1 border rounded contribution-input">
+                    </div>
+                `).join('') + `<p class="text-right font-bold mt-4">Összesen: <span id="total-contribution">0</span> / 100</p>`;
+            const buttons = [modalCancelButton, { text: 'Befektetés', classes: 'bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded', handler: applyProject }];
+            createModalElements('Ívóhely Projekt', body, buttons);
+            document.querySelector('.modal-body').addEventListener('input', e => {
+                if (e.target.classList.contains('contribution-input')) {
+                    let total = 0;
+                    document.querySelectorAll('.contribution-input').forEach(input => total += parseInt(input.value) || 0);
+                    document.getElementById('total-contribution').textContent = total;
+                }
+            });
+        }
+
+        function applyProject() {
+            let total = 0;
+            const contributions = [];
+            document.querySelectorAll('.contribution-input').forEach(input => {
+                const amount = parseInt(input.value) || 0;
+                total += amount;
+                contributions.push({ id: input.dataset.playerId, amount });
+            });
+            if (total < 100) { alert('Nincs meg a 100 hal a befektetéshez!'); return; }
+
+            contributions.forEach(c => {
+                const player = gameState.players.find(p => p.id == c.id);
+                if (player) player.fish -= c.amount;
+            });
+            gameState.maxPond = 120;
+            pondHistoryChart.options.scales.y.max = gameState.maxPond;
+            logEvent('Ívóhely projekt', 'A tó kapacitása 120-ra nőtt.');
+            updateAllDisplays();
+            hideModal();
+        }
+
+        function setupCommunityTaxModal() {
+            const body = `<p class="mb-4">Add meg, hány körön át fizessen mindenki 10% adót.</p><label>Időtartam (kör): <input type="number" id="duration" value="1" min="1" class="w-full p-1 border rounded"></label>`;
+            const buttons = [modalCancelButton, { text: 'Alkalmaz', classes: 'bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded', handler: applyCommunityTax }];
+            createModalElements('Közösségi Hozzájárulás', body, buttons);
+        }
+
+        function applyCommunityTax() {
+            gameState.communityTaxRounds = parseInt(document.getElementById('duration').value);
+            logEvent('Közösségi hozzájárulás', `${gameState.communityTaxRounds} körig 10% adót fizet mindenki.`);
+            updateActiveEffectsDisplay();
+            hideModal();
+        }
+
+        function setupSickFisherModal() {
+            const body = `<p class="mb-4">Válaszd ki a beteg halászt és a betegség időtartamát.</p>
+                <div class="space-y-2 mb-4 player-selection" data-lottery-count="1">${getPlayerCheckboxes(p => !p.isBankrupt && !p.isSick, 'radio')}</div>
+                <label>Időtartam (kör): <input type="number" id="duration" value="2" min="1" class="w-full p-1 border rounded"></label>`;
+            const buttons = [modalCancelButton, { text: 'Alkalmaz', classes: 'bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded', handler: applySickFisher }];
+            createModalElements('Beteg Halász Beállítása', body, buttons);
+            createLotteryButton(modalBody.querySelector('.player-selection'), { count: 1 });
+        }
+
+        function applySickFisher() {
+            const duration = parseInt(document.getElementById('duration').value);
+            const selectedPlayer = document.querySelector('input[name="selected_players"]:checked');
+            if (selectedPlayer) {
+                const player = gameState.players.find(p => p.id == selectedPlayer.value);
+                if (player) {
+                    player.isSick = true;
+                    player.sickRounds = duration;
+                    logEvent('Beteg halász', `${player.name} ${duration} körre kiesik.`);
+                }
+            }
+            setupPlayerInputs();
+            updateActiveEffectsDisplay();
+            hideModal();
+        }
+        function populateChaosCards() {
+            chaosCardSelect.innerHTML = '';
+            chaosCards.forEach(card => {
+                const option = document.createElement('option');
+                option.value = card.id;
+                option.textContent = card.title;
+                chaosCardSelect.appendChild(option);
+            });
+        }
+
+        function showModal() {
+            chaosModal.classList.remove('opacity-0', 'pointer-events-none');
+            chaosModal.querySelector('div > div').classList.remove('scale-95');
+        }
+
+        function hideModal() {
+            chaosModal.classList.add('opacity-0', 'pointer-events-none');
+            chaosModal.querySelector('div > div').classList.add('scale-95');
+        }
+
+        function getFixedCost(playerCount) {
+            if (playerCount <= 5) return 5;
+            if (playerCount <= 7) return 4;
+            return 3;
+        }
+
+        function initializeCharts() {
+            const playerWealthCtx = document.getElementById('player-wealth-chart').getContext('2d');
+            playerWealthChart = new Chart(playerWealthCtx, {
+                type: 'bar',
+                data: { labels: [], datasets: [{ label: 'Halak száma', data: [], backgroundColor: [], borderColor: [], borderWidth: 1 }] },
+                options: { maintainAspectRatio: false, scales: { y: { beginAtZero: true, title: { display: true, text: 'Halak száma' } } }, plugins: { legend: { display: false } } }
+            });
+            const pondHistoryCtx = document.getElementById('pond-history-chart').getContext('2d');
+            pondHistoryChart = new Chart(pondHistoryCtx, {
+                type: 'line',
+                data: { labels: [], datasets: [{ label: 'Halak a tóban', data: [], fill: false, borderColor: 'rgba(75, 192, 192, 1)', tension: 0.1 }] },
+                options: { maintainAspectRatio: false, scales: { y: { beginAtZero: true, max: 120, title: { display: true, text: 'Halak száma a tóban' } }, x: { title: { display: true, text: 'Kör' } } }, plugins: { legend: { display: false } } }
+            });
+        }
+
+        function baseGameState(playerCount) {
+            return {
+                players: Array.from({ length: playerCount }, (_, i) => ({
+                    id: i + 1,
+                    name: `Halász #${i + 1}`,
+                    fish: 0,
+                    isBankrupt: false,
+                    isSick: false,
+                    rehabRounds: 0,
+                    extraTaxRounds: 0,
+                    sickRounds: 0,
+                    lastCatch: 0,
+                    history: { wealth: [0] }
+                })),
+                pond: 100,
+                bank: 0,
+                fixedCost: getFixedCost(playerCount),
+                round: 1,
+                maxPond: 100,
+                droughtRounds: 0,
+                infectionRounds: 0,
+                communityTaxRounds: 0,
+                isFrozen: false,
+                history: {
+                    pond: [100],
+                    rounds: []
+                },
+                eventLog: [],
+                gameLog: []
+            };
+        }
+
+        function initGame() {
+            if (!appInitialized) {
+                initializeApp();
+            }
+            const playerCount = parseInt(playerCountInput.value, 10);
+            const isValidCount = Number.isInteger(playerCount) && playerCount >= 5 && playerCount <= 10;
+            if (!setupScreen.classList.contains('hidden') && !isValidCount) {
+                alert('A halászok száma 5 és 10 között kell, hogy legyen.');
+                return;
+            }
+            if (setupScreen.classList.contains('hidden')) {
+                return;
+            }
+            gameState = baseGameState(playerCount);
+            undoStack.length = 0;
+            undoBtn.disabled = true;
+            gameLog = gameState.gameLog;
+            logEntryId = 0;
+            renderLog();
+            closeLogPanel();
+            if (includeLogCheckbox) includeLogCheckbox.checked = false;
+            manualFixedCostInput.value = gameState.fixedCost;
+            setupScreen.classList.add('hidden');
+            gameScreen.classList.remove('hidden');
+            setupPlayerInputs();
+            updateAllDisplays();
+            logEvent('Játék indult', `${playerCount} halásszal elkezdődött a játék.`);
+            resetTimer(true);
+        }
+
+        function setupPlayerInputs() {
+            playerInputsContainer.innerHTML = '';
+            gameState.players.forEach(player => {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'flex flex-col';
+
+                const label = document.createElement('label');
+                label.className = 'font-medium text-gray-700 flex items-center justify-between';
+                label.setAttribute('for', `player-${player.id}-catch`);
+
+                const nameSpan = document.createElement('span');
+                nameSpan.className = `player-name cursor-text ${player.isBankrupt ? 'text-gray-400' : (player.isSick ? 'text-red-500' : 'text-gray-700')}`;
+                nameSpan.dataset.playerId = player.id;
+                nameSpan.title = 'Kattints a név átírásához';
+                nameSpan.textContent = player.name;
+                label.appendChild(nameSpan);
+
+                const statuses = [];
+                if (player.isBankrupt) statuses.push('Csőd');
+                if (player.isSick) statuses.push('Beteg');
+                if (player.rehabRounds > 0) statuses.push(`Rehab ${player.rehabRounds} k.`);
+                if (player.extraTaxRounds > 0) statuses.push(`Dupla adó ${player.extraTaxRounds} k.`);
+                if (statuses.length > 0) {
+                    const statusSpan = document.createElement('span');
+                    statusSpan.className = 'text-xs text-blue-600 font-semibold ml-2';
+                    statusSpan.textContent = `(${statuses.join(', ')})`;
+                    label.appendChild(statusSpan);
+                }
+
+                wrapper.appendChild(label);
+
+                const catchInput = document.createElement('input');
+                catchInput.type = 'number';
+                catchInput.id = `player-${player.id}-catch`;
+                catchInput.min = '0';
+                catchInput.value = '0';
+                catchInput.className = 'mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2';
+                if (player.isBankrupt || player.isSick || gameState.isFrozen) {
+                    catchInput.disabled = true;
+                }
+                wrapper.appendChild(catchInput);
+
+                playerInputsContainer.appendChild(wrapper);
+            });
+        }
+
+        function startEditingPlayerName(span) {
+            const playerId = Number(span.dataset.playerId);
+            const player = gameState.players.find(p => p.id === playerId);
+            if (!player) return;
+            if (span.dataset.editing === '1') return;
+            span.dataset.editing = '1';
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.value = player.name;
+            input.className = 'player-name-input border border-indigo-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500';
+            input.dataset.playerId = playerId;
+            input.setAttribute('aria-label', `${player.name} új neve`);
+            span.replaceWith(input);
+            input.focus();
+            input.select();
+
+            const finish = () => savePlayerName(playerId, input);
+            const cancel = () => {
+                input.value = player.name;
+                savePlayerName(playerId, input);
+            };
+
+            input.addEventListener('blur', () => finish(), { once: true });
+            input.addEventListener('keydown', event => {
+                if (event.key === 'Enter') {
+                    event.preventDefault();
+                    finish();
+                } else if (event.key === 'Escape') {
+                    event.preventDefault();
+                    cancel();
+                }
+            });
+        }
+
+        function savePlayerName(playerId, input) {
+            if (input.dataset.saving === '1') return;
+            input.dataset.saving = '1';
+            const player = gameState.players.find(p => p.id === playerId);
+            if (!player) return;
+            const rawName = input.value.trim();
+            const newName = rawName || `Halász #${playerId}`;
+            player.name = newName;
+            const span = document.createElement('span');
+            span.className = `player-name cursor-text ${player.isBankrupt ? 'text-gray-400' : (player.isSick ? 'text-red-500' : 'text-gray-700')}`;
+            span.dataset.playerId = playerId;
+            span.title = 'Kattints a név átírásához';
+            span.textContent = newName;
+            input.replaceWith(span);
+            updateCharts();
+        }
+
+        window.revivePlayer = function (playerId) {
+            const player = gameState.players.find(p => p.id === playerId);
+            if (player && player.isBankrupt) {
+                player.isBankrupt = false;
+                player.fish = 0;
+                player.rehabRounds = 5;
+                logEvent('Újrakezdés', `${player.name} visszatért a játékba.`);
+                setupPlayerInputs();
+                updateAllDisplays();
+            }
+        };
+
+        function calculateSustainableCatch(currentPond) {
+            const regenModifier = gameState.droughtRounds > 0 ? 1.5 : 2;
+            return Math.max(0, Math.floor((currentPond * (regenModifier - 1)) / regenModifier));
+        }
+        function endRound() {
+            if (!gameState.players) return;
+            const preRoundPond = gameState.pond;
+            let totalCatch = 0;
+            const catches = new Map();
+            const previousRoundIndex = gameState.round - 1;
+            const activePlayers = gameState.players.filter(player => {
+                const wealthHistory = player.history?.wealth || [];
+                const previousWealth = wealthHistory[previousRoundIndex];
+                return typeof previousWealth !== 'number' ? true : previousWealth >= 0;
+            }).length;
+            gameState.players.forEach(player => {
+                if (!player.isBankrupt && !player.isSick && !gameState.isFrozen) {
+                    const planned = parseInt(document.getElementById(`player-${player.id}-catch`).value) || 0;
+                    totalCatch += planned;
+                    catches.set(player.id, planned);
+                }
+            });
+            if (totalCatch > gameState.pond) {
+                alert(`Hiba: Összesen ${totalCatch} halat szeretnétek kivenni, de csak ${Math.floor(gameState.pond)} van a tóban!`);
+                return;
+            }
+            pushUndo();
+            const sustainableCatch = calculateSustainableCatch(preRoundPond);
+
+            gameState.players.forEach(player => {
+                if (!player.isBankrupt && !player.isSick && !gameState.isFrozen) {
+                    const fishCaught = catches.get(player.id) || 0;
+                    gameState.pond -= fishCaught;
+                    const effectiveCatch = gameState.infectionRounds > 0 ? fishCaught / 2 : fishCaught;
+                    player.fish += effectiveCatch;
+                    player.lastCatch = fishCaught;
+                } else {
+                    player.lastCatch = 0;
+                }
+            });
+
+            gameState.players.forEach(player => {
+                if (player.isBankrupt) return;
+                let cost = 0;
+                if (gameState.communityTaxRounds > 0) {
+                    cost = Math.ceil(player.fish * 0.1);
+                    if (player.fish < 5) cost = 0;
+                    else if (player.fish <= 10) cost = Math.max(cost, 1);
+                } else {
+                    cost = gameState.fixedCost * (player.extraTaxRounds > 0 ? 2 : 1) + (player.rehabRounds > 0 ? 1 : 0);
+                }
+                if (!player.isSick) {
+                    player.fish -= cost;
+                } else {
+                    player.fish -= gameState.fixedCost;
+                }
+                gameState.bank += cost;
+                if (player.fish < 0) {
+                    logEvent('Csőd', `${player.name} csődbe ment.`);
+                    player.isBankrupt = true;
+                    player.fish = 0;
+                }
+            });
+
+            gameState.players.forEach(player => {
+                if (!player.history) {
+                    player.history = { wealth: Array.from({ length: gameState.round }, () => 0) };
+                }
+                player.history.wealth.push(player.fish);
+            });
+
+            const regenerationModifier = gameState.droughtRounds > 0 ? 1.5 : 2;
+            gameState.pond = Math.min(gameState.maxPond, gameState.pond * regenerationModifier);
+            gameState.history.pond.push(gameState.pond);
+
+            gameState.history.rounds.push({
+                round: gameState.round,
+                day: dayNames[(gameState.round - 1) % dayNames.length],
+                actualCatch: totalCatch,
+                sustainableCatch,
+                 activePlayers,
+                actualPerPlayer: activePlayers ? totalCatch / activePlayers : 0,
+                fairShare: activePlayers ? sustainableCatch / activePlayers : 0
+            });
+
+            gameState.round++;
+
+            if (gameState.droughtRounds > 0) gameState.droughtRounds--;
+            if (gameState.infectionRounds > 0) gameState.infectionRounds--;
+            if (gameState.communityTaxRounds > 0) gameState.communityTaxRounds--;
+            gameState.isFrozen = false;
+            gameState.players.forEach(player => {
+                if (player.rehabRounds > 0) player.rehabRounds--;
+                if (player.extraTaxRounds > 0) player.extraTaxRounds--;
+                if (player.sickRounds > 0) player.sickRounds--;
+                if (player.isSick && player.sickRounds <= 0) player.isSick = false;
+            });
+
+            logEvent('Kör lezárva', `Összfogás: ${totalCatch} hal. Fenntartható fogás: ${sustainableCatch}.`);
+            setupPlayerInputs();
+            updateAllDisplays();
+            resetTimer();
+        }
+
+        function updateDisplay() {
+            currentRoundDisplay.textContent = gameState.round;
+            currentDayDisplay.textContent = dayNames[(gameState.round - 1) % dayNames.length];
+            pondStatusDisplay.textContent = Math.floor(gameState.pond);
+            bankStatusDisplay.textContent = Math.floor(gameState.bank);
+            fixedCostDisplay.textContent = gameState.fixedCost;
+            const sustainableCatch = Math.max(0, Math.floor(calculateSustainableCatch(gameState.pond)));
+            const growthThreshold = sustainableCatch > 0 ? Math.max(0, sustainableCatch - 1) : 0;
+            const targetForMaxGrowth = gameState.maxPond / 2;
+            const maxGrowthCatch = Math.max(0, Math.min(sustainableCatch, Math.floor(gameState.pond - targetForMaxGrowth)));
+            if (growthThresholdDisplay) {
+                growthThresholdDisplay.textContent = growthThreshold;
+            }
+            if (maxGrowthDisplay) {
+                maxGrowthDisplay.textContent = maxGrowthCatch;
+            }
+            if (pondCard) {
+                if (gameState.pond < 30) {
+                    pondCard.classList.add('card-warning');
+                } else {
+                    pondCard.classList.remove('card-warning');
+                }
+            }
+        }
+
+        function updateCharts() {
+            if (!playerWealthChart || !pondHistoryChart) {
+                return;
+            }
+            playerWealthChart.data.labels = gameState.players.map(p => p.name);
+            playerWealthChart.data.datasets[0].data = gameState.players.map(p => p.fish);
+            playerWealthChart.data.datasets[0].backgroundColor = gameState.players.map(p => p.isBankrupt ? 'rgba(156, 163, 175, 0.5)' : 'rgba(54, 162, 235, 0.6)');
+            playerWealthChart.data.datasets[0].borderColor = gameState.players.map(p => p.isBankrupt ? 'rgba(156, 163, 175, 1)' : 'rgba(54, 162, 235, 1)');
+            playerWealthChart.update();
+
+            pondHistoryChart.data.labels = gameState.history.pond.map((_, index) => `${index}`);
+            pondHistoryChart.data.datasets[0].data = gameState.history.pond.map(p => Math.floor(p));
+            pondHistoryChart.options.scales.y.max = gameState.maxPond;
+            pondHistoryChart.update();
+        }
+
+        function updateActiveEffectsDisplay() {
+            const effects = [];
+            if (gameState.droughtRounds > 0) effects.push(`Aszály (${gameState.droughtRounds} k.)`);
+            if (gameState.infectionRounds > 0) effects.push(`Fertőzés (${gameState.infectionRounds} k.)`);
+            if (gameState.communityTaxRounds > 0) effects.push(`10% adó (${gameState.communityTaxRounds} k.)`);
+            if (gameState.isFrozen) effects.push('Befagyott tó!');
+            if (gameState.maxPond > 100) effects.push('Tó fejlesztve (Max 120)');
+
+            if (effects.length > 0) {
+                activeEffectDisplay.innerHTML = effects.map(e => `<div>${e}</div>`).join('');
+                activeEffectContainer.classList.remove('hidden');
+            } else {
+                activeEffectContainer.classList.add('hidden');
+            }
+        }
+
+        function getFairshareLegendHTML() {
+            return `
+                <div class="flex flex-wrap justify-center gap-3 text-xs text-gray-500 mb-4">
+                    <span><span class="inline-block w-3 h-3 rounded-sm bg-green-500 mr-1"></span>≤100%</span>
+                    <span><span class="inline-block w-3 h-3 rounded-sm bg-yellow-400 mr-1"></span>100–130%</span>
+                    <span><span class="inline-block w-3 h-3 rounded-sm bg-orange-400 mr-1"></span>130–160%</span>
+                    <span><span class="inline-block w-3 h-3 rounded-sm bg-red-500 mr-1"></span>>160%</span>
+                </div>
+            `;
+        }
+
+        function getFairshareEmptyHTML() {
+            return `
+                <h3 class="text-xl font-bold text-center mb-4">Fenntarthatósági és Fair-share Áttekintés</h3>
+                ${getFairshareLegendHTML()}
+                <div class="text-center text-gray-500">Még nincs lezárt kör.</div>
+            `;
+        }
+
+        function updateFairshareTable() {
+            const legendHTML = getFairshareLegendHTML();
+            if (!gameState.history.rounds.length) {
+                fairshareContainer.innerHTML = getFairshareEmptyHTML();
+                return;
+            }
+            const rows = gameState.history.rounds.map(entry => {
+                const ratio = entry.sustainableCatch > 0 ? (entry.actualCatch / entry.sustainableCatch) * 100 : 0;
+                let colorClass = 'bg-green-100 text-green-800';
+                if (ratio > 160) colorClass = 'bg-red-100 text-red-800';
+                else if (ratio > 130) colorClass = 'bg-orange-100 text-orange-800';
+                else if (ratio > 100) colorClass = 'bg-yellow-100 text-yellow-800';
+                return `
+                    <tr class="text-sm">
+                        <td class="px-3 py-2 font-semibold">${entry.round}. kör (${entry.day})</td>
+                        <td class="px-3 py-2 text-right">${entry.activePlayers ?? '-'}</td>
+                        <td class="px-3 py-2 text-right">${Math.round(entry.sustainableCatch)}</td>
+                        <td class="px-3 py-2 text-right">${Math.round(entry.actualCatch)}</td>
+                        <td class="px-3 py-2 text-right">${Math.round(entry.fairShare)}</td>
+                        <td class="px-3 py-2 text-right">${Math.round(entry.actualPerPlayer)}</td>
+                        <td class="px-3 py-2">
+                            <span class="px-2 py-1 rounded-md ${colorClass}">${Math.round(ratio)}%</span>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+            fairshareContainer.innerHTML = `
+                <h3 class="text-xl font-bold text-center mb-4">Fenntarthatósági és Fair-share Áttekintés</h3>
+                ${legendHTML}
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50 text-xs uppercase tracking-wide text-gray-500">
+                            <tr>
+                                <th class="px-3 py-2 text-left">Kör</th>
+                                <th class="px-3 py-2 text-right">Aktív</th>
+                                <th class="px-3 py-2 text-right">MFF</th>
+                                <th class="px-3 py-2 text-right">Tényleges</th>
+                                <th class="px-3 py-2 text-right">Fair-share</th>
+                                <th class="px-3 py-2 text-right">Tényleges / fő</th>
+                                <th class="px-3 py-2 text-left">Arány</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100">${rows}</tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        function updateEventLog() {
+            eventLogList.innerHTML = gameState.eventLog.slice().reverse().map(entry => `
+                <li class="border border-gray-200 rounded-lg px-3 py-2">
+                    <div class="text-xs text-gray-400">${escapeHtml(entry.timestamp)}</div>
+                    <div class="font-semibold text-gray-700">${escapeHtml(entry.title)}</div>
+                    <div class="text-gray-600">${escapeHtml(entry.message)}</div>
+                </li>
+            `).join('');
+        }
+
+        function updateAllDisplays() {
+            updateDisplay();
+            updateCharts();
+            updateActiveEffectsDisplay();
+            updateFairshareTable();
+            updateEventLog();
+        }
+
+        function updateFixedCost() {
+            const newCost = parseInt(manualFixedCostInput.value);
+            if (!isNaN(newCost) && newCost >= 0) {
+                gameState.fixedCost = newCost;
+                updateDisplay();
+            }
+        }
+        function logEvent(title, message) {
+            const now = new Date();
+            gameState.eventLog.push({
+                timestamp: now.toLocaleString('hu-HU'),
+                title,
+                message
+            });
+            updateEventLog();
+            logAction(`[${title}] ${message}`);
+        }
+
+        function logAction(text, options = {}) {
+            const round = options.round ?? (gameState && gameState.round ? gameState.round : 1);
+            if (!Array.isArray(gameState.gameLog)) {
+                gameState.gameLog = [];
+            }
+            const entry = {
+                id: ++logEntryId,
+                round,
+                text,
+                flagged: options.flagged ?? false,
+                notes: options.notes ?? ''
+            };
+            gameState.gameLog.push(entry);
+            gameLog = gameState.gameLog;
+            renderLog();
+        }
+
+        function renderLog() {
+            if (!logEntries) return;
+            if (!gameLog.length) {
+                logEntries.innerHTML = '<p class="text-gray-500 text-sm">Még nincs rögzített bejegyzés.</p>';
+                return;
+            }
+            logEntries.innerHTML = gameLog.map(entry => {
+                const flaggedClass = entry.flagged ? 'border-amber-400 bg-amber-50' : 'border-gray-200 bg-white';
+                const flagText = entry.flagged ? 'Zászló levétele' : 'Megjelölés';
+                const flagClass = entry.flagged ? 'text-amber-600' : 'text-indigo-600';
+                const noteSection = entry.flagged ? `
+                    <div class="mt-3">
+                        <label class="text-xs text-gray-500 block mb-1" for="log-note-${entry.id}">Jegyzet</label>
+                        <textarea id="log-note-${entry.id}" class="log-note-input w-full border rounded-md p-2 text-sm" placeholder="Jegyzet hozzáadása...">${escapeHtml(entry.notes || '')}</textarea>
+                    </div>` : '';
+                return `
+                    <div class="border rounded-lg p-3 ${flaggedClass}" data-entry-id="${entry.id}">
+                        <div class="flex items-start justify-between gap-3">
+                            <div>
+                                <div class="text-xs text-gray-400">${entry.round}. kör</div>
+                                <div class="font-semibold text-gray-700">${escapeHtml(entry.text)}</div>
+                            </div>
+                            <button type="button" class="flag-btn text-xs font-semibold ${flagClass}">${flagText}</button>
+                        </div>
+                        ${noteSection}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function openLogPanel() {
+            if (logPanel) {
+                logPanel.classList.remove('translate-x-full');
+            }
+        }
+
+        function closeLogPanel() {
+            if (logPanel) {
+                logPanel.classList.add('translate-x-full');
+            }
+        }
+
+        function toggleLogPanel() {
+            if (!logPanel) return;
+            if (logPanel.classList.contains('translate-x-full')) {
+                openLogPanel();
+            } else {
+                closeLogPanel();
+            }
+        }
+
+        function handleLogPanelClick(event) {
+            const flagButton = event.target.closest('.flag-btn');
+            if (flagButton) {
+                const entryEl = flagButton.closest('[data-entry-id]');
+                if (!entryEl) return;
+                const entryId = Number(entryEl.dataset.entryId);
+                const entry = gameLog.find(item => item.id === entryId);
+                if (!entry) return;
+                entry.flagged = !entry.flagged;
+                if (!entry.flagged) {
+                    entry.notes = '';
+                }
+                renderLog();
+            }
+        }
+
+        function handleLogPanelInput(event) {
+            if (!event.target.classList.contains('log-note-input')) return;
+            const entryEl = event.target.closest('[data-entry-id]');
+            if (!entryEl) return;
+            const entryId = Number(entryEl.dataset.entryId);
+            const entry = gameLog.find(item => item.id === entryId);
+            if (!entry) return;
+            entry.notes = event.target.value;
+        }
+
+        function resetGame() {
+            if (confirm('Biztosan új játékot szeretnél kezdeni?')) {
+                clearInterval(timerId);
+                timerId = null;
+                timerDurationSelect.value = '3';
+                resetTimer(true);
+                undoStack.length = 0;
+                undoBtn.disabled = true;
+                if (gameState && Array.isArray(gameState.gameLog)) {
+                    gameState.gameLog = [];
+                }
+                gameLog = [];
+                logEntryId = 0;
+                renderLog();
+                closeLogPanel();
+                gameState = {};
+                setupScreen.classList.remove('hidden');
+                gameScreen.classList.add('hidden');
+                playerInputsContainer.innerHTML = '';
+                manualFixedCostInput.value = '';
+                eventLogList.innerHTML = '';
+                fairshareContainer.innerHTML = getFairshareEmptyHTML();
+                if (includeLogCheckbox) includeLogCheckbox.checked = false;
+                pondStatusDisplay.textContent = '0';
+                bankStatusDisplay.textContent = '0';
+                fixedCostDisplay.textContent = '0';
+                if (growthThresholdDisplay) growthThresholdDisplay.textContent = '0';
+                if (maxGrowthDisplay) maxGrowthDisplay.textContent = '0';
+                if (pondCard) pondCard.classList.remove('card-warning');
+                if (playerWealthChart) {
+                    playerWealthChart.data.labels = [];
+                    playerWealthChart.data.datasets[0].data = [];
+                    playerWealthChart.update();
+                }
+                if (pondHistoryChart) {
+                    pondHistoryChart.data.labels = [];
+                    pondHistoryChart.data.datasets[0].data = [];
+                    pondHistoryChart.update();
+                }
+            }
+        }
+
+        function randomizeChaosCard() {
+            const available = chaosCards.filter(card => card.id !== 'none' && card.id !== 'random' && card.setupModal);
+            if (!available.length) return null;
+            return available[Math.floor(Math.random() * available.length)];
+        }
+
+        function renderTimer() {
+            const minutes = Math.floor(timerSeconds / 60).toString().padStart(2, '0');
+            const seconds = (timerSeconds % 60).toString().padStart(2, '0');
+            timerDisplay.textContent = `${minutes}:${seconds}`;
+        }
+
+        function playBeep() {
+            if (timerMuteToggle.checked) return;
+            if (!audioContext) {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (!AudioContext) return;
+                audioContext = new AudioContext();
+            }
+            const oscillator = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+            oscillator.type = 'sine';
+            oscillator.frequency.setValueAtTime(880, audioContext.currentTime);
+            gain.gain.setValueAtTime(0.001, audioContext.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.2, audioContext.currentTime + 0.01);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.4);
+            oscillator.connect(gain);
+            gain.connect(audioContext.destination);
+            oscillator.start();
+            oscillator.stop(audioContext.currentTime + 0.5);
+        }
+
+        function updateTimerToggleState(running) {
+            if (!timerToggleBtn) return;
+            if (running) {
+                timerToggleBtn.textContent = 'Szünet';
+                timerToggleBtn.classList.remove('bg-green-500', 'hover:bg-green-600');
+                timerToggleBtn.classList.add('bg-yellow-500', 'hover:bg-yellow-600');
+            } else {
+                timerToggleBtn.textContent = 'Start';
+                timerToggleBtn.classList.remove('bg-yellow-500', 'hover:bg-yellow-600');
+                timerToggleBtn.classList.add('bg-green-500', 'hover:bg-green-600');
+            }
+        }
+
+        function startTimer() {
+            if (timerId) return;
+            updateTimerToggleState(true);
+            timerId = setInterval(() => {
+                if (timerSeconds > 0) {
+                    timerSeconds--;
+                    renderTimer();
+                    if (timerSeconds === 0) {
+                        clearInterval(timerId);
+                        timerId = null;
+                        updateTimerToggleState(false);
+                        playBeep();
+                        alert('Lejárt az idő!');
+                    }
+                }
+            }, 1000);
+        }
+
+        function pauseTimer() {
+            if (timerId) {
+                clearInterval(timerId);
+                timerId = null;
+                updateTimerToggleState(false);
+            }
+        }
+
+        function toggleTimer() {
+            if (timerId) {
+                pauseTimer();
+            } else {
+                startTimer();
+            }
+        }
+
+        function resetTimer(force = false) {
+            if (force) {
+                const selected = timerDurationSelect ? parseInt(timerDurationSelect.value, 10) : 3;
+                timerDurationSeconds = (Number.isFinite(selected) ? selected : 3) * 60;
+            }
+            clearInterval(timerId);
+            timerId = null;
+            timerSeconds = timerDurationSeconds;
+            renderTimer();
+            updateTimerToggleState(false);
+        }
+
+        function buildPrintableLog() {
+            const container = document.createElement('div');
+            container.id = 'log-panel-printable';
+            container.setAttribute('data-export-block', '');
+            container.className = 'bg-white p-6 rounded-xl shadow-lg mt-6';
+            let inner = '<h3 class="text-xl font-bold text-center mb-4">Játéknapló</h3>';
+            if (!gameLog.length) {
+                inner += '<p class="text-center text-gray-500 text-sm">Nincs rögzített bejegyzés.</p>';
+            } else {
+                inner += '<div class="space-y-3 text-sm text-gray-700">';
+                inner += gameLog.map(entry => `
+                    <div class="border border-gray-200 rounded-lg p-3">
+                        <div class="text-xs text-gray-400">${entry.round}. kör</div>
+                        <div class="font-semibold text-gray-700">${escapeHtml(entry.text)}</div>
+                        ${entry.flagged ? '<div class="mt-2 inline-flex items-center text-xs font-semibold text-amber-600 uppercase tracking-wide">Megjelölve</div>' : ''}
+                        ${entry.notes ? `<div class="mt-2 whitespace-pre-line text-gray-600">${escapeHtml(entry.notes)}</div>` : ''}
+                    </div>
+                `).join('');
+                inner += '</div>';
+            }
+            container.innerHTML = inner;
+            return container;
+        }
+
+        async function exportPdf() {
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' });
+            const pageWidth = pdf.internal.pageSize.getWidth();
+            const pageHeight = pdf.internal.pageSize.getHeight();
+            const scale = Math.min(2, window.devicePixelRatio || 2);
+            const blocks = Array.from(document.querySelectorAll('[data-export-block]'));
+            let printableLog = null;
+
+            try {
+                if (includeLogCheckbox && includeLogCheckbox.checked) {
+                    printableLog = buildPrintableLog();
+                    gameScreen.appendChild(printableLog);
+                    blocks.push(printableLog);
+                }
+
+                let currentY = 0;
+                for (const block of blocks) {
+                    const canvas = await html2canvas(block, { scale });
+                    const imgData = canvas.toDataURL('image/png');
+                    let imgWidth = pageWidth;
+                    let imgHeight = canvas.height * imgWidth / canvas.width;
+                    if (imgHeight > MAX_PDF_LENGTH) {
+                        const ratio = MAX_PDF_LENGTH / imgHeight;
+                        imgHeight *= ratio;
+                        imgWidth *= ratio;
+                    }
+                    if (imgHeight > pageHeight) {
+                        const ratio = (pageHeight - 40) / imgHeight;
+                        imgHeight *= ratio;
+                        imgWidth *= ratio;
+                    }
+                    if (currentY + imgHeight > pageHeight) {
+                        pdf.addPage();
+                        currentY = 0;
+                    }
+                    pdf.addImage(imgData, 'PNG', 0, currentY, imgWidth, imgHeight);
+                    currentY += imgHeight + 12;
+                }
+                const timestamp = new Date().toISOString().replace(/[:T]/g, '-').split('.')[0];
+                pdf.save(`halasto-szimulacio-${timestamp}.pdf`);
+            } finally {
+                if (printableLog && printableLog.parentNode) {
+                    printableLog.parentNode.removeChild(printableLog);
+                }
+            }
+        }
+
+        function handleChaosTrigger() {
+            const selectedId = chaosCardSelect.value;
+            let card = chaosCards.find(c => c.id === selectedId);
+            if (selectedId === 'random') {
+                card = randomizeChaosCard();
+            }
+            if (card && card.setupModal) {
+                card.setupModal();
+                triggerFlash();
+            }
+            chaosCardSelect.value = 'none';
+        }
+
+        function triggerFlash() {
+            if (!flashOverlay) return;
+            flashOverlay.classList.remove('opacity-0', 'pointer-events-none');
+            flashOverlay.classList.add('opacity-60');
+            setTimeout(() => {
+                flashOverlay.classList.remove('opacity-60');
+                flashOverlay.classList.add('opacity-0');
+                flashOverlay.classList.add('pointer-events-none');
+            }, 250);
+        }
+
+        function bindEvents() {
+            triggerChaosBtn && triggerChaosBtn.addEventListener('click', handleChaosTrigger);
+            manualFixedCostInput && manualFixedCostInput.addEventListener('input', updateFixedCost);
+            startGameBtn && startGameBtn.addEventListener('click', initGame);
+            endRoundBtn && endRoundBtn.addEventListener('click', endRound);
+            newGameBtn && newGameBtn.addEventListener('click', resetGame);
+            undoBtn && undoBtn.addEventListener('click', undoLast);
+            exportPdfBtn && exportPdfBtn.addEventListener('click', exportPdf);
+            timerToggleBtn && timerToggleBtn.addEventListener('click', toggleTimer);
+            timerResetBtn && timerResetBtn.addEventListener('click', () => resetTimer(true));
+            timerDurationSelect && timerDurationSelect.addEventListener('change', () => {
+                resetTimer(true);
+            });
+            toggleLogPanelBtn && toggleLogPanelBtn.addEventListener('click', toggleLogPanel);
+            closeLogPanelBtn && closeLogPanelBtn.addEventListener('click', closeLogPanel);
+            logPanel && logPanel.addEventListener('click', handleLogPanelClick);
+            logPanel && logPanel.addEventListener('input', handleLogPanelInput);
+            playerInputsContainer && playerInputsContainer.addEventListener('click', event => {
+                const span = event.target.closest('.player-name');
+                if (span) {
+                    startEditingPlayerName(span);
+                }
+            });
+            triggerMarketBtn && triggerMarketBtn.addEventListener('click', () => {
+                triggerFlash();
+            });
+        }
+
+        function initializeApp() {
+            if (!appInitialized) {
+                populateChaosCards();
+                bindEvents();
+                renderTimer();
+                updateTimerToggleState(false);
+                renderLog();
+                if (!gameState.history || !Array.isArray(gameState.history.rounds) || !gameState.history.rounds.length) {
+                    fairshareContainer.innerHTML = getFairshareEmptyHTML();
+                }
+                appInitialized = true;
+            }
+            if ((!playerWealthChart || !pondHistoryChart) && typeof Chart !== 'undefined') {
+                initializeCharts();
+                if (gameState.players && gameState.players.length) {
+                    updateCharts();
+                }
+            }
+        }
+
+        async function runAutomatedTests() {
+            if (window.__autoTestInProgress) return;
+            window.__autoTestInProgress = true;
+            window.__autoTestDone = false;
+            const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+            const results = [];
+            const record = (name, condition, info) => {
+                results.push({ name, passed: !!condition, info: condition ? undefined : info });
+            };
+
+            try {
+                initGame();
+                await wait(50);
+                record('Game screen visible after init', setupScreen.classList.contains('hidden') && !gameScreen.classList.contains('hidden'));
+                const playerInputs = playerInputsContainer.querySelectorAll('input');
+                record('Player inputs match player count', playerInputs.length === parseInt(playerCountInput.value, 10));
+                record('Game log receives initial entry', Array.isArray(gameState.gameLog) && gameState.gameLog.length === 1 && gameState.gameLog[0].text.includes('Játék indult'));
+                record('Growth helper values rendered', growthThresholdDisplay.textContent === '49' && maxGrowthDisplay.textContent === '50');
+            } catch (error) {
+                record('Initialization phase', false, error.message);
+            }
+
+            try {
+                timerDurationSelect.value = '1';
+                timerDurationSelect.dispatchEvent(new Event('change'));
+                timerToggleBtn.click();
+                await wait(1100);
+                record('Timer counts down', timerDisplay.textContent === '00:59', `display=${timerDisplay.textContent}`);
+                timerToggleBtn.click();
+                timerResetBtn.click();
+                record('Timer resets to duration', timerDisplay.textContent === '01:00', `display=${timerDisplay.textContent}`);
+                record('Timer button resets label', timerToggleBtn.textContent.trim() === 'Start', `label=${timerToggleBtn.textContent}`);
+            } catch (error) {
+                record('Timer controls', false, error.message);
+            }
+
+            try {
+                playerInputsContainer.querySelectorAll('input').forEach(input => { input.value = '10'; });
+                endRoundBtn.click();
+                await wait(50);
+                record('Round increments after endRound', currentRoundDisplay.textContent === '2', `round=${currentRoundDisplay.textContent}`);
+                record('Fair-share table renders rows', !!fairshareContainer.querySelector('table'));
+                undoBtn.click();
+                await wait(50);
+                record('Undo restores previous round', currentRoundDisplay.textContent === '1', `round=${currentRoundDisplay.textContent}`);
+                record('Game log rewinds with undo', Array.isArray(gameState.gameLog) && gameState.gameLog.length === 1);
+            } catch (error) {
+                record('End round and undo flow', false, error.message);
+            }
+
+            try {
+                playerInputsContainer.querySelectorAll('input').forEach(input => { input.value = '10'; });
+                endRoundBtn.click();
+                await wait(50);
+                chaosCardSelect.value = 'kiralyi_sarc';
+                triggerChaosBtn.click();
+                await wait(50);
+                const levyInputs = Array.from(modalBody.querySelectorAll('.levy-input'));
+                if (levyInputs.length) {
+                    const totalWealth = levyInputs.reduce((sum, input) => sum + (parseInt(input.max) || 0), 0);
+                    const required = Math.round(totalWealth * 0.25);
+                    levyInputs[0].value = required;
+                    levyInputs[0].dispatchEvent(new Event('input'));
+                }
+                const modalButtons = modalFooter.querySelectorAll('button');
+                if (modalButtons.length > 1) {
+                    modalButtons[1].click();
+                }
+                await wait(50);
+                record('Royal levy logs event', eventLogList.textContent.includes('Rendkívüli sarc'));
+                record('Royal levy appears in game log', Array.isArray(gameState.gameLog) && gameState.gameLog.some(entry => entry.text.includes('Rendkívüli sarc')));
+            } catch (error) {
+                record('Royal levy event flow', false, error.message);
+            }
+
+            try {
+                const originalHtml2Canvas = window.html2canvas;
+                const originalJsPdf = window.jspdf;
+                let exported = false;
+                window.html2canvas = () => Promise.resolve({
+                    width: 1000,
+                    height: 1000,
+                    toDataURL: () => 'data:image/png;base64,stub'
+                });
+                window.jspdf = { jsPDF: class {
+                    constructor() { this.internal = { pageSize: { getWidth: () => 595.28, getHeight: () => 841.89 } }; }
+                    addImage() {}
+                    addPage() {}
+                    save() { exported = true; }
+                } };
+                exportPdfBtn.click();
+                await wait(100);
+                record('PDF export completes without error', exported);
+                window.html2canvas = originalHtml2Canvas;
+                window.jspdf = originalJsPdf;
+            } catch (error) {
+                record('PDF export flow', false, error.message);
+            }
+
+            try {
+                manualFixedCostInput.value = '7';
+                manualFixedCostInput.dispatchEvent(new Event('input'));
+                record('Manual fixed cost updates display', fixedCostDisplay.textContent === '7', `display=${fixedCostDisplay.textContent}`);
+            } catch (error) {
+                record('Manual fixed cost update', false, error.message);
+            }
+
+            try {
+                const originalConfirm = window.confirm;
+                window.confirm = () => true;
+                newGameBtn.click();
+                await wait(50);
+                record('New game returns to setup screen', !setupScreen.classList.contains('hidden') && gameScreen.classList.contains('hidden'));
+                window.confirm = originalConfirm;
+            } catch (error) {
+                record('New game reset flow', false, error.message);
+            }
+
+            try {
+                toggleLogPanelBtn.click();
+                await wait(30);
+                const opened = !logPanel.classList.contains('translate-x-full');
+                closeLogPanelBtn.click();
+                await wait(30);
+                const closed = logPanel.classList.contains('translate-x-full');
+                record('Log panel toggles visibility', opened && closed);
+            } catch (error) {
+                record('Log panel toggle', false, error.message);
+            }
+
+            window.__autoTestResults = results;
+            window.__autoTestDone = true;
+            console.log('AUTOTEST RESULTS', JSON.stringify(results));
+        }
+
+        if (document.readyState === 'complete') {
+            initializeApp();
+        } else {
+            window.addEventListener('load', initializeApp);
+        }
+
+        if (window.location.search.includes('runTests=1')) {
+            window.addEventListener('load', () => {
+                setTimeout(() => runAutomatedTests().finally(() => { window.__autoTestInProgress = false; }), 100);
+            });
+        }
+
+        window.initGame = initGame;
+        window.runAutomatedTests = runAutomatedTests;
+    </script>
+</body>
+</html>
