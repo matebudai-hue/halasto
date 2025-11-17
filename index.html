@@ -5,32 +5,7 @@
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>Halastó – Facilitátor Dashboard v8.10 (Pilótafülke)</title>
-<script src="https://cdn.tailwindcss.com">
-
-
-
-function ensureQRCodeReady(){
-  if (!window.QRCode) {
-    alert('QR könyvtár még nem töltődött be. Próbáld újra pár másodperc múlva.');
-    return false;
-  }
-  return true;
-}
-
-let unsubCatches = null;
-let unsubPlayers = null;
-
-// Rebind catches listener when round changes
-onSnapshot(S(room), (snap) => {
-  try {
-    const nr = (snap.data() && snap.data().round) || 1;
-    if (typeof currentRound === 'undefined' || nr !== currentRound) {
-      currentRound = nr;
-      if (typeof bindIntentsToInputs === 'function') bindIntentsToInputs();
-    }
-  } catch(e) { console.error('round listener error', e); }
-});
-</script>
+<script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -2411,7 +2386,7 @@ function updateDisplay(s){
     let hostUid=null;
 
     // Sign-in and boot
-    signInAnonymously(auth).catch(err => { console.error(err); alert('Bejelentkezési hiba: ' + (err && err.code)); });
+    signInAnonymously(auth).catch(console.error);
     onAuthStateChanged(auth, async (user) => {
       if (!user) return;
       uid = user.uid;
@@ -2506,15 +2481,14 @@ function updateDisplay(s){
         const link = buildJoinUrl();
         $('#olJoinLink').textContent = link;
         $('#olQrModal').style.display = 'flex';
-        const box = $('#olQrBox'); box.innerHTML = ''; if (!ensureQRCodeReady()) { return; }
-new QRCode(box, { text: link, width: 220, height: 220 });
+        const box = $('#olQrBox'); box.innerHTML = ''; new QRCode(box, { text: link, width: 220, height: 220 });
       };
       $('#olQrClose').onclick = () => $('#olQrModal').style.display = 'none';
       $('#olCopy').onclick = async () => { await navigator.clipboard.writeText(buildJoinUrl()); alert('Link másolva'); };
 
       // mapping UI and intent listener
       renderMappingUI();
-      // removed duplicate players onSnapshot to avoid double subscription
+      onSnapshot(P(room), () => renderMappingUI());
       bindIntentsToInputs();
 
       // publish after endRound without changing its logic
@@ -2523,19 +2497,14 @@ new QRCode(box, { text: link, width: 220, height: 220 });
     }
 
     function buildJoinUrl(){
-  const base = (location.origin + location.pathname)
-    .replace(/index\.html$/,'')
-    .replace(/\/?$/, '/');
-  return `${base}?role=player&room=${encodeURIComponent(room)}`;
-}
-?role=player&room=${encodeURIComponent(room)}`;
+      const base = location.href.split('?')[0];
+      return `${base}?role=player&room=${encodeURIComponent(room)}`;
     }
 
     function renderMappingUI() {
-      if (unsubPlayers) { try { unsubPlayers(); } catch(e){} unsubPlayers = null; }
-const el = $('#olMapList'); el.innerHTML='';
+      const el = $('#olMapList'); el.innerHTML='';
       // list remote players
-      unsubPlayers = onSnapshot(P(room), (snap) => {
+      onSnapshot(P(room), (snap) => {
         el.innerHTML='';
         const hostPlayers = (window.gameState?.players || []).map(p => ({ id:p.id, name:p.name }));
         snap.forEach(d => {
@@ -2556,10 +2525,8 @@ const el = $('#olMapList'); el.innerHTML='';
     }
 
     function bindIntentsToInputs() {
-        if (unsubCatches) { try { unsubCatches(); } catch(e){} unsubCatches = null; }
-// whenever catches for the current round arrive, write them into the corresponding host input fields
-      onSnapshot(S(room), (snap) => { currentRound = snap.data()?.round || 1; 
-});
+      // whenever catches for the current round arrive, write them into the corresponding host input fields
+      onSnapshot(S(room), (snap) => { currentRound = snap.data()?.round || 1; });
       onSnapshot(collection(db, 'sessions', room, 'rounds', String(currentRound), 'catches'), (snap) => {
         snap.docChanges().forEach(ch => {
           const remotePid = ch.doc.id;
@@ -2587,20 +2554,21 @@ const el = $('#olMapList'); el.innerHTML='';
       };
     }
 
-    async function publishStateFromDashboard(prevRoundGuess) {try {
+    async function publishStateFromDashboard(prevRoundGuess) {
+      try {
         const gs = window.gameState || {};
         const sref = S(room);
         const sSnap = await getDoc(sref);
         const r = gs.round || sSnap.data()?.round || 1;
         // Build public summary for players
         const pubPlayers = {};
-        (gs.players || []).forEach(p => {
+        for (const p of (gs.players || [])) {
           // try to find remote uid via reverse mapping (hostPid -> remotePid)
           const remotePid = Object.keys(mapping).find(k => mapping[k] === p.id);
           const remote = remotePid ? (await getDoc(doc(db, 'sessions', room, 'players', remotePid))).data() : null;
           const key = remote?.uid || ('local_'+p.id);
           pubPlayers[key] = { wallet: Math.floor(p.fish||0), lastCatch: Math.floor(p.lastCatch||0), activeEffect: (p.effects||[])[0]?.name || null };
-        });
+        }
         await updateDoc(sref, { 
           lake: { stock: Math.floor(gs.pond || 0), sustainableCatch: Math.floor(gs.mff || 0) || (sSnap.data()?.lake?.sustainableCatch ?? 0) },
           round: r,
