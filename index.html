@@ -676,7 +676,7 @@
     function createDurationSelectorHTML(id = "duration_selector") { return `<label class="block text-sm font-medium" style="color:var(--muted)">Időtartam</label><select id="${id}" class="mt-1 block w-full rounded-xl border shadow-sm p-2.5" style="border-color: var(--border); background: rgba(255,255,255,.9); color:var(--text);"><option value="1">1 nap</option><option value="2">2 nap</option><option value="3">3 nap</option><option value="4">4 nap</option><option value="5">5 nap</option><option value="random">Véletlen (1-5 nap)</option></select>`; }
     function getDurationFromSelector(id = "duration_selector") { const v = document.getElementById(id).value; if (v === 'random') return Math.floor(Math.random() * 5) + 1; return parseInt(v) || 1; }
     function createStartDelaySelectorHTML(id = "start_delay_selector") { return `<label class="block text-sm font-medium" style="color:var(--muted)">Késleltetés</label><select id="${id}" class="mt-1 block w-full rounded-xl border shadow-sm p-2.5" style="border-color: var(--border); background: rgba(255,255,255,.9); color:var(--text);"><option value="0">Azonnal</option><option value="1">1 nap múlva</option><option value="2">2 nap múlva</option><option value="3">3 nap múlva</option></select>`; }
-    function getStartDelayFromSelector(id = "start_delay_selector") { return parseInt(document.getElementById((id) && id).value)) || 0; }
+    function getStartDelayFromSelector(id = "start_delay_selector") { return parseInt(document.getElementById(id)?.value) || 0; }
     function addAnnotation(label, duration, color, playerId = null, startOffset = 0) { const startRound = gameState.round + startOffset; gameState.annotations.push({ startRound, endRound: startRound + duration - 1, label, color, playerId }); }
     function showToast(message) { const container = document.getElementById('toast-container'); const toast = document.createElement('div'); toast.className = 'toast'; toast.textContent = message; container.appendChild(toast); setTimeout(() => toast.classList.add('show'), 10); setTimeout(() => { toast.classList.remove('show'); setTimeout(() => toast.remove(), 400); }, 4000); }
     
@@ -801,7 +801,7 @@
         {
             id:'beteg_halasz', title:'A Beteg Halász',
             setupModal: function() { const body = `<p>Válaszd ki a beteg halászt.</p><div class="space-y-2 my-3">${getPlayerCheckboxes(p=>!p.isBankrupt && !hasEffect(p.id, 'beteg_halasz'), 'radio')}</div><div class="grid grid-cols-2 gap-4">${createDurationSelectorHTML()}${createStartDelaySelectorHTML()}</div>`; const buttons = [modalCancelButton, {text:'Alkalmaz', classes:'px-4 py-2 rounded-xl btn-secondary',handler:()=>this.apply()}]; createModalElements(this.title, body, buttons, 'bad'); },
-            apply: function(params = {}){ const d = params.duration || getDurationFromSelector(); const o = params.offset !== undefined ? params.offset : getStartDelayFromSelector(); const selected = params.players ? params.players[0] : gameState.players.find(x=>x.id==document.querySelector('input[name="selected_players"]:checked'() && ).value)); if(selected){ triggerEffect({ id: this.id, name: 'Betegség', type: 'duration', duration: d, startOffset: o, description: 'Nem halászhat.', annoLabel: `Beteg (${selected.name})`, targets: [selected.id], color: annotationColors.playerBad, icon: effectIcons.player }); } hideModal('chaos-modal'); setupPlayerInputs(); }
+            apply: function(params = {}){ const d = params.duration || getDurationFromSelector(); const o = params.offset !== undefined ? params.offset : getStartDelayFromSelector(); const selected = params.players ? params.players[0] : gameState.players.find(x=>x.id==document.querySelector('input[name="selected_players"]:checked')?.value); if(selected){ triggerEffect({ id: this.id, name: 'Betegség', type: 'duration', duration: d, startOffset: o, description: 'Nem halászhat.', annoLabel: `Beteg (${selected.name})`, targets: [selected.id], color: annotationColors.playerBad, icon: effectIcons.player }); } hideModal('chaos-modal'); setupPlayerInputs(); }
         },
         {
             id:'kiralyi_sarc', title:'Királyi Sarc', isInstant: true,
@@ -1775,7 +1775,7 @@ function updateDisplay(s){
                 statusText = daysAgo === 0 ? `(Ezen a napon)` : `(${daysAgo} nappal ezelőtt)`;
             }
             
-            const targets = (effect.targets && effect.targets.length > 0) ? (effect.targets.includes('global') ? 'Mindenki' : effect.targets.map(id => gameState.players.find(p=>p.id===(id) && id).name)).join(', ')) : '';
+            const targets = (effect.targets && effect.targets.length > 0) ? (effect.targets.includes('global') ? 'Mindenki' : effect.targets.map(id => gameState.players.find(p=>p.id===id)?.name).join(', ')) : '';
             const outcomeHTML = status === 'expired' && effect.outcome ? `<p class="outcome">Eredmény: ${effect.outcome}</p>` : '';
             const detailsHTML = (effect.details && effect.details.length > 0) ? `<div class="details"><strong>Részletek:</strong><ul class="list-disc list-inside ml-1">${effect.details.map(d => `<li>${d}</li>`).join('')}</ul></div>` : '';
             
@@ -1945,7 +1945,7 @@ function updateDisplay(s){
     }
     
     function updateFixedCost(v){ const n=parseInt(v); if(!isNaN(n)&&n>=0){ gameState.fixedCost=n; dom.fixedCostDisplay.textContent=n; logEvent(`A fix költség manuálisan ${n}-ra lett állítva.`); } }
-    function resetGame(){ if(confirm('Biztosan új játékot szeretne indítani? Minden jelenlegi adat elvész.')) { dom.gameScreen.classList.add('hidden'); dom.setupScreen.classList.remove('hidden'); dom.playerCountInput.value = 4; dom.pondStatusDisplay.textContent = '100'; dom.bankStatusDisplay.textContent = '0'; dom.fixedCostDisplay.textContent = '0'; dom.sustainableCatchDisplay.textContent = '0'; dom.maxGrowthCatchDisplay.textContent = '0'; dom.sustainabilityTableBody.innerHTML = ''; dom.totalWealthNumber.textContent = '0'; dom.playerInputsContainer.innerHTML = ''; [playerWealthChart, pondHistoryChart, playerWealthHistoryChart, catchHistoryChart].forEach(ch=>{ try{ (ch && ch.destroy)(); }catch(e){} }); gameState = {}; undoStack = []; updateUndoButton(); renderLog(); } }
+    function resetGame(){ if(confirm('Biztosan új játékot szeretne indítani? Minden jelenlegi adat elvész.')) { dom.gameScreen.classList.add('hidden'); dom.setupScreen.classList.remove('hidden'); dom.playerCountInput.value = 4; dom.pondStatusDisplay.textContent = '100'; dom.bankStatusDisplay.textContent = '0'; dom.fixedCostDisplay.textContent = '0'; dom.sustainableCatchDisplay.textContent = '0'; dom.maxGrowthCatchDisplay.textContent = '0'; dom.sustainabilityTableBody.innerHTML = ''; dom.totalWealthNumber.textContent = '0'; dom.playerInputsContainer.innerHTML = ''; [playerWealthChart, pondHistoryChart, playerWealthHistoryChart, catchHistoryChart].forEach(ch=>{ try{ ch?.destroy(); }catch(e){} }); gameState = {}; undoStack = []; updateUndoButton(); renderLog(); } }
     const STORAGE_KEY = 'pdfSections_v2';
     function loadPdfSectionPrefs(){ const raw = localStorage.getItem(STORAGE_KEY); const inputs = document.querySelectorAll('input[name="pdf-sections"]'); if(!raw) return; try{ const arr=JSON.parse(raw); const set=new Set(arr); inputs.forEach(i=> i.checked=set.has(i.value)); }catch(e){} }
     function savePdfSectionPrefs(){ const picks = Array.from(document.querySelectorAll('input[name="pdf-sections"]:checked')).map(i=>i.value); localStorage.setItem(STORAGE_KEY, JSON.stringify(picks)); }
@@ -1969,10 +1969,10 @@ function updateDisplay(s){
         [playerWealthChart, pondHistoryChart, playerWealthHistoryChart, catchHistoryChart].filter(Boolean).forEach(ch=>{ try{ ch.resize(); ch.update('none'); }catch(e){} });
         await new Promise(r=>setTimeout(r,50));
         
-        const isLogExport = document.querySelector('input[name="pdf-sections"][value="#log-panel"]'() && ).checked); let tempLogPanel = null;
+        const isLogExport = document.querySelector('input[name="pdf-sections"][value="#log-panel"]')?.checked; let tempLogPanel = null;
         if (isLogExport) { tempLogPanel = document.createElement('div'); tempLogPanel.id = "log-panel-printable"; tempLogPanel.className = 'p-4 bg-white'; tempLogPanel.innerHTML = `<h3 class="text-lg font-bold mb-4">Játéknapló</h3>` + document.getElementById('log-content').innerHTML; document.body.appendChild(tempLogPanel); }
         
-        const isAuditExport = document.querySelector('input[name="pdf-sections"][value="#audit-log-modal-content"]'() && ).checked);
+        const isAuditExport = document.querySelector('input[name="pdf-sections"][value="#audit-log-modal-content"]')?.checked;
         if (isAuditExport) { dom.auditLogModalContent.style.transform = 'none'; dom.auditLogModalContent.style.transition = 'none'; dom.auditLogTableContainer.style.maxHeight = 'none'; }
         
         const sustainScroll = document.querySelector('#sustainability-container .sustainability-table-container'); const oldMaxH = sustainScroll ? sustainScroll.style.maxHeight : null; const oldOverflow = sustainScroll ? sustainScroll.style.overflowY : null;
@@ -1999,7 +1999,7 @@ function updateDisplay(s){
             pdf.addImage(canvas.toDataURL('image/png'), 'PNG', margin, margin, contentW, scaledH);
         }
 
-        if (sustainScroll)(({ sustainScroll.style.maxHeight = oldMaxH) != null ? ({ sustainScroll.style.maxHeight = oldMaxH) : (''));((sustainScroll.style.overflowY = oldOverflow) != null ? (sustainScroll.style.overflowY = oldOverflow) : ('')); }
+        if (sustainScroll) { sustainScroll.style.maxHeight = oldMaxH ?? ''; sustainScroll.style.overflowY = oldOverflow ?? ''; }
         if (isAuditExport) { dom.auditLogModalContent.style.transform = ''; dom.auditLogModalContent.style.transition = ''; dom.auditLogTableContainer.style.maxHeight = ''; }
         if (tempLogPanel) document.body.removeChild(tempLogPanel);
         if (!wasAnalysisBayOpen) analysisBay.open = false;
@@ -2036,14 +2036,14 @@ function updateDisplay(s){
       if(saved ? saved==='dark' : window.matchMedia('(prefers-color-scheme: dark)').matches) root.classList.add('dark');
       const btn = document.getElementById('theme-toggle'), icon = document.getElementById('theme-icon');
       function setIcon(){ icon.innerHTML = root.classList.contains('dark') ? '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z"/>' : '<path d="M12 18a6 6 0 1 0 0-12 6 6 0 0 0 0 12Z M12 2v2M12 20v2M4 12H2M22 12h-2M5 5l-1.5-1.5M20.5 20.5 19 19M19 5l1.5-1.5M5 19 3.5 20.5"/>'; }
-      setIcon(); (btn && btn.addEventListener)('click', ()=>{ root.classList.toggle('dark'); localStorage.setItem(key, root.classList.contains('dark')?'dark':'light'); setIcon(); applyChartTheme(); [playerWealthChart, pondHistoryChart, playerWealthHistoryChart, catchHistoryChart].forEach(ch=>(ch && ch.update)('none')); });
+      setIcon(); btn?.addEventListener('click', ()=>{ root.classList.toggle('dark'); localStorage.setItem(key, root.classList.contains('dark')?'dark':'light'); setIcon(); applyChartTheme(); [playerWealthChart, pondHistoryChart, playerWealthHistoryChart, catchHistoryChart].forEach(ch=>ch?.update('none')); });
       
       // Fő eseménykezelők
       dom.startGameBtn.addEventListener('click', initGame); dom.endGameBtn.addEventListener('click', endRound); dom.newGameBtn.addEventListener('click', resetGame); dom.undoBtn.addEventListener('click', undoLastRound); dom.exportPdfBtn.addEventListener('click', exportToPDF, { passive:true });
       dom.demoFillBtn.addEventListener('click', ()=>{ if (dom.gameScreen.classList.contains('hidden')) initGame(); for(let k=0;k<6;k++){ gameState.players.forEach(p=>{ if(!p.isBankrupt) { const max = Math.max(0, Math.floor(gameState.pond / gameState.players.length * 0.8)); const val = Math.max(0, Math.min(8, Math.floor(Math.random() * (max+1)))); const inp = document.getElementById(`player-${p.id}-catch`); if (inp && !inp.disabled) inp.value = val; } }); endRound(); } });
       
       // Fix költség szerkesztése
-      dom.fixedCostCard.addEventListener('click', ()((=>{ const curr = gameState.fixedCost) != null ? (=>{ const curr = gameState.fixedCost) : (0)); dom.fixedCostDisplayContainer.innerHTML = `<input type="number" id="inline-fixed-cost-edit" value="${curr}" class="font-black number-display w-full text-center rounded-xl border p-1" style="color:var(--text); background: rgba(225,234,204,.5); border-color: var(--c-turq);">`; const input = document.getElementById('inline-fixed-cost-edit'); input.focus(); input.select(); const save = ()=>{ updateFixedCost(input.value); dom.fixedCostDisplayContainer.innerHTML = `<p id="fixed-cost-display" class="font-black number-display mt-1" style="color:var(--text)">${gameState.fixedCost}</p>`; }; input.addEventListener('blur', save); input.addEventListener('keydown', e=>{ if(e.key==='Enter') input.blur(); }); });
+      dom.fixedCostCard.addEventListener('click', ()=>{ const curr = gameState.fixedCost ?? 0; dom.fixedCostDisplayContainer.innerHTML = `<input type="number" id="inline-fixed-cost-edit" value="${curr}" class="font-black number-display w-full text-center rounded-xl border p-1" style="color:var(--text); background: rgba(225,234,204,.5); border-color: var(--c-turq);">`; const input = document.getElementById('inline-fixed-cost-edit'); input.focus(); input.select(); const save = ()=>{ updateFixedCost(input.value); dom.fixedCostDisplayContainer.innerHTML = `<p id="fixed-cost-display" class="font-black number-display mt-1" style="color:var(--text)">${gameState.fixedCost}</p>`; }; input.addEventListener('blur', save); input.addEventListener('keydown', e=>{ if(e.key==='Enter') input.blur(); }); });
       
       // Név és Vagyon eseménykezelők
       dom.playerInputsContainer.addEventListener('click', e => {
@@ -2410,7 +2410,7 @@ function updateDisplay(s){
       onSnapshot(S(room), (snap) => {
         const d = snap.data() || {};
         currentRound = d.round || 1;
-        $('#olLake').textContent = Math.floor((d && d.lake)?((.stock) != null ? (.stock) : (0)));
+        $('#olLake').textContent = Math.floor(d?.lake?.stock ?? 0);
       });
 
       // bind own player doc if exists
@@ -2439,11 +2439,11 @@ function updateDisplay(s){
       // wallet/last/effect mirror from session-level published data (host publishes after endRound)
       onSnapshot(S(room), async (snap) => {
         const d = snap.data() || {};
-        const my = ((d && d.publicPlayers) && (d && d.publicPlayers)[uid]);
+        const my = d?.publicPlayers?.[uid];
         if (my) {
-          $('#olWallet')((.textContent = Math.floor(my.wallet) != null ? (.textContent = Math.floor(my.wallet) : (0)));
-          $('#olLast')((.textContent = Math.floor(my.lastCatch) != null ? (.textContent = Math.floor(my.lastCatch) : (0)));
-          $('#olEffect')((.textContent = my.activeEffect) != null ? (.textContent = my.activeEffect) : ('-'));
+          $('#olWallet').textContent = Math.floor(my.wallet ?? 0);
+          $('#olLast').textContent = Math.floor(my.lastCatch ?? 0);
+          $('#olEffect').textContent = my.activeEffect ?? '-';
         }
       });
     }
@@ -2451,7 +2451,7 @@ function updateDisplay(s){
     async function sendIntent() {
       if (!playerId) { $('#olSendMsg').textContent = 'Előbb csatlakozz!'; return; }
       const s = await getDoc(S(room));
-      const r = Number((s.data() && s.data().round) || 1);
+      const r = Number(s.data()?.round || 1);
       const v = Number($('#olIntent').value);
       if (!(v>=0)) { $('#olSendMsg').textContent = 'Adj meg 0 vagy pozitív számot.'; return; }
       const myDoc = CD(room, r, playerId);
@@ -2497,10 +2497,11 @@ function updateDisplay(s){
     }
 
     function buildJoinUrl(){
-  const base = (location.origin + location.pathname)
+  // robust base: strip index.html, ensure trailing slash
+  var base = (location.origin + location.pathname)
     .replace(/index\.html$/,'')
     .replace(/\/?$/, '/');
-  return `${base}?role=player&room=${encodeURIComponent(room)}#player`;
+  return base + '?role=player&room=' + encodeURIComponent(room);
 }
 ?role=player&room=${encodeURIComponent(room)}`;
     }
@@ -2510,7 +2511,7 @@ function updateDisplay(s){
       // list remote players
       onSnapshot(P(room), (snap) => {
         el.innerHTML='';
-        const hostPlayers = (window.(gameState && gameState.players) || []).map(p => ({ id:p.id, name:p.name }));
+        const hostPlayers = (window.gameState?.players || []).map(p => ({ id:p.id, name:p.name }));
         snap.forEach(d => {
           const pl = d.data(); const pid = d.id;
           const wrap = document.createElement('div');
@@ -2530,13 +2531,13 @@ function updateDisplay(s){
 
     function bindIntentsToInputs() {
       // whenever catches for the current round arrive, write them into the corresponding host input fields
-      onSnapshot(S(room), (snap) => { currentRound = (snap.data() && snap.data().round) || 1; });
+      onSnapshot(S(room), (snap) => { currentRound = snap.data()?.round || 1; });
       onSnapshot(collection(db, 'sessions', room, 'rounds', String(currentRound), 'catches'), (snap) => {
         snap.docChanges().forEach(ch => {
           const remotePid = ch.doc.id;
           const hostPid = mapping[remotePid];
           if (!hostPid) return;
-          const intent = Number(((ch.doc.data() && ch.doc.data().intent)) || 0);
+          const intent = Number(ch.doc.data()?.intent || 0);
           const input = document.getElementById(`player-${hostPid}-catch`);
           if (input) {
             input.value = intent;
@@ -2550,7 +2551,7 @@ function updateDisplay(s){
       const orig = window.endRound;
       if (typeof orig !== 'function') return; // safety
       window.endRound = function patchedEndRound() {
-        const prevRound = window.(gameState && gameState.round);
+        const prevRound = window.gameState?.round;
         const res = orig.apply(this, arguments);
         // after original logic completes, publish
         publishStateFromDashboard(prevRound);
@@ -2563,18 +2564,18 @@ function updateDisplay(s){
         const gs = window.gameState || {};
         const sref = S(room);
         const sSnap = await getDoc(sref);
-        const r = gs.round || (sSnap.data() && sSnap.data().round) || 1;
+        const r = gs.round || sSnap.data()?.round || 1;
         // Build public summary for players
         const pubPlayers = {};
-        for (const p of (gs.players || [])) {
+        (gs.players || []).forEach(p => {
           // try to find remote uid via reverse mapping (hostPid -> remotePid)
           const remotePid = Object.keys(mapping).find(k => mapping[k] === p.id);
           const remote = remotePid ? (await getDoc(doc(db, 'sessions', room, 'players', remotePid))).data() : null;
-          const key = (remote && remote.uid) || ('local_'+p.id);
-          pubPlayers[key] = { wallet: Math.floor(p.fish||0), lastCatch: Math.floor(p.lastCatch||0), activeEffect: (p.effects||[])[(0] && 0].name) || null };
-        }
+          const key = remote?.uid || ('local_'+p.id);
+          pubPlayers[key] = { wallet: Math.floor(p.fish||0), lastCatch: Math.floor(p.lastCatch||0), activeEffect: (p.effects||[])[0]?.name || null };
+        });
         await updateDoc(sref, { 
-          lake: { stock: Math.floor(gs.pond || 0), sustainableCatch: Math.floor(gs.mff || 0) || (((sSnap.data() && sSnap.data().lake && sSnap.data().lake.sustainableCatch) != null ? sSnap.data().lake.sustainableCatch : 0)) },
+          lake: { stock: Math.floor(gs.pond || 0), sustainableCatch: Math.floor(gs.mff || 0) || (sSnap.data()?.lake?.sustainableCatch ?? 0) },
           round: r,
           publicPlayers: pubPlayers
         });
