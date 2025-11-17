@@ -672,10 +672,10 @@ let unsubPlayers = null;
     function getCurrentSeason(round) { const S = GAME_CONFIG.SEASONS; const seasonIndex = Math.floor(((round - 1) % (S.cycleLength * S.seasons.length)) / S.cycleLength); return S.seasons[seasonIndex]; }
     function getFullDay(round) { return `${round}. nap (${getDayOfWeek(round)})`; }
     function triggerFlash() { dom.flashOverlay.classList.add('active'); setTimeout(() => dom.flashOverlay.classList.remove('active'), 150); }
-    function animateNumber(el, to, ms=420, suffix=''){ const from = parseInt((el.textContent||'').replace(/\D/g,'')) || 0; if (from === to) { el.textContent = to.toLocaleString('hu-HU') + suffix; return; } const start = performance.now(); const fmt = n => Math.round(n).toLocaleString('hu-HU') + suffix; function tick(t){ const p = Math.min(1, (t-start)/ms); const eased = p<.5 ? 2*p*p : -1+(4-2*p)*p; el.textContent = fmt(from + (to-from)*eased); if(p<1) requestAnimationFrame(tick); } requestAnimationFrame(tick); }
+    function animateNumber(el, to, ms, suffix){ if (typeof ms==='undefined') ms=420; if (typeof suffix==='undefined') suffix=''; const from = parseInt((el.textContent||'').replace(/\D/g,'')) || 0; if (from === to) { el.textContent = to.toLocaleString('hu-HU') + suffix; return; } const start = performance.now(); const fmt = n => Math.round(n).toLocaleString('hu-HU') + suffix; function tick(t){ const p = Math.min(1, (t-start)/ms); const eased = p<.5 ? 2*p*p : -1+(4-2*p)*p; el.textContent = fmt(from + (to-from)*eased); if(p<1) requestAnimationFrame(tick); } requestAnimationFrame(tick); }
     function showModal(modalId = 'chaos-modal') { const modal = document.getElementById(modalId); if(modal) { modal.classList.remove('opacity-0','pointer-events-none'); modal.querySelector('div>div').classList.remove('scale-95'); } }
     function hideModal(modalId = 'chaos-modal') { const modal = document.getElementById(modalId); if(modal) { modal.classList.add('opacity-0','pointer-events-none'); modal.querySelector('div>div').classList.add('scale-95'); } }
-    function createModalElements(title, bodyHTML, footerButtons, type = 'neutral'){
+    function createModalElements(title, bodyHTML, footerButtons, type){ if (typeof type==='undefined') type='neutral';
         const modalContent = dom.chaosModal.querySelector('div>div');
         modalContent.classList.remove('modal-type-good', 'modal-type-bad', 'modal-type-neutral');
         if (type === 'good') modalContent.classList.add('modal-type-good');
@@ -2401,7 +2401,7 @@ function updateDisplay(s){
 
     // Sign-in and boot
     signInAnonymously(auth).catch(err => { console.error(err); alert('Bejelentkezési hiba: ' + (err && err.code)); });
-    onAuthStateChanged(auth, async (user) => {
+    onAuthStateChanged(auth, function(user){
       if (!user) return;
       uid = user.uid;
       if (role === 'player') {
@@ -2415,7 +2415,7 @@ function updateDisplay(s){
     });
 
     // ---------------- PLAYER ----------------
-    async function playerBoot() {
+    function playerBoot() {
       // join button
       $('#olJoin').onclick = joinRoom;
       $('#olSend').onclick = sendIntent;
@@ -2487,7 +2487,7 @@ function updateDisplay(s){
       if (!s.exists()) {
         await setDoc(sref, { code: room, createdAt: serverTimestamp(), status:'lobby', round:1, lake:{ stock: 100, sustainableCatch: 10 }, hostUid: uid });
       } else if (!s.data().hostUid) {
-        await updateDoc(sref, { hostUid: uid });
+        updateDoc(sref, { hostUid: uid });
       }
 
       // QR
@@ -2590,7 +2590,7 @@ const el = $('#olMapList'); el.innerHTML='';
           const key = (remote && remote.uid) || ('local_'+p.id);
           pubPlayers[key] = { wallet: Math.floor(p.fish||0), lastCatch: Math.floor(p.lastCatch||0), activeEffect: (p.effects||[])[(0] && 0].name) || null };
         }
-        await updateDoc(sref, { 
+        updateDoc(sref, { 
           lake: { stock: Math.floor(gs.pond || 0), sustainableCatch: Math.floor(gs.mff || 0) || ((sSnap.data() && sSnap.data().(lake) && lake).sustainableCatch)(() != null ? () : (0))) },
           round: r,
           publicPlayers: pubPlayers
