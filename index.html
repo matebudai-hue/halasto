@@ -2497,8 +2497,12 @@ function updateDisplay(s){
     }
 
     function buildJoinUrl(){
-      const base = location.href.split('?')[0];
-      return `${base}?role=player&room=${encodeURIComponent(room)}`;
+  const base = (location.origin + location.pathname)
+    .replace(/index\.html$/,'')
+    .replace(/\/?$/, '/');
+  return `${base}?role=player&room=${encodeURIComponent(room)}#player`;
+}
+?role=player&room=${encodeURIComponent(room)}`;
     }
 
     function renderMappingUI() {
