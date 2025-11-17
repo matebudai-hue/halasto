@@ -668,13 +668,13 @@ let unsubPlayers = null;
         }
     };
 
-    function getDayOfWeek(round) { if (round === 0) return 'Kezdeti állapot'; const days = ['Hétfő', 'Kedd', 'Szerda', 'Csütörtök', 'Péntek', 'Szombat', 'Vasárnap']; return days[(round - 1) % 7]; }
-    function getCurrentSeason(round) { const S = GAME_CONFIG.SEASONS; const seasonIndex = Math.floor(((round - 1) % (S.cycleLength * S.seasons.length)) / S.cycleLength); return S.seasons[seasonIndex]; }
-    function getFullDay(round) { return `${round}. nap (${getDayOfWeek(round)})`; }
-    function triggerFlash() { dom.flashOverlay.classList.add('active'); setTimeout(() => dom.flashOverlay.classList.remove('active'), 150); }
+    function getDayOfWeek(round){ if (round === 0) return 'Kezdeti állapot'; const days = ['Hétfő', 'Kedd', 'Szerda', 'Csütörtök', 'Péntek', 'Szombat', 'Vasárnap']; return days[(round - 1) % 7]; }
+    function getCurrentSeason(round){ const S = GAME_CONFIG.SEASONS; const seasonIndex = Math.floor(((round - 1) % (S.cycleLength * S.seasons.length)) / S.cycleLength); return S.seasons[seasonIndex]; }
+    function getFullDay(round){ return `${round}. nap (${getDayOfWeek(round)})`; }
+    function triggerFlash(){ dom.flashOverlay.classList.add('active'); setTimeout(() => dom.flashOverlay.classList.remove('active'), 150); }
     function animateNumber(el, to, ms, suffix){ if (typeof ms==='undefined') ms=420; if (typeof suffix==='undefined') suffix=''; const from = parseInt((el.textContent||'').replace(/\D/g,'')) || 0; if (from === to) { el.textContent = to.toLocaleString('hu-HU') + suffix; return; } const start = performance.now(); const fmt = n => Math.round(n).toLocaleString('hu-HU') + suffix; function tick(t){ const p = Math.min(1, (t-start)/ms); const eased = p<.5 ? 2*p*p : -1+(4-2*p)*p; el.textContent = fmt(from + (to-from)*eased); if(p<1) requestAnimationFrame(tick); } requestAnimationFrame(tick); }
-    function showModal(modalId = 'chaos-modal') { const modal = document.getElementById(modalId); if(modal) { modal.classList.remove('opacity-0','pointer-events-none'); modal.querySelector('div>div').classList.remove('scale-95'); } }
-    function hideModal(modalId = 'chaos-modal') { const modal = document.getElementById(modalId); if(modal) { modal.classList.add('opacity-0','pointer-events-none'); modal.querySelector('div>div').classList.add('scale-95'); } }
+    function showModal(modalId){ if (typeof modalId==='undefined') modalId='chaos-modal'; const modal = document.getElementById(modalId); if(modal) { modal.classList.remove('opacity-0','pointer-events-none'); modal.querySelector('div>div').classList.remove('scale-95'); } }
+    function hideModal(modalId){ if (typeof modalId==='undefined') modalId='chaos-modal'; const modal = document.getElementById(modalId); if(modal) { modal.classList.add('opacity-0','pointer-events-none'); modal.querySelector('div>div').classList.add('scale-95'); } }
     function createModalElements(title, bodyHTML, footerButtons, type){ if (typeof type==='undefined') type='neutral';
         const modalContent = dom.chaosModal.querySelector('div>div');
         modalContent.classList.remove('modal-type-good', 'modal-type-bad', 'modal-type-neutral');
@@ -685,17 +685,17 @@ let unsubPlayers = null;
     }
     const modalCancelButton = { text:'Mégse', classes:'px-4 py-2 rounded-xl', handler: ()=>hideModal('chaos-modal') };
     const modalOKButton = { text:'Értettem', classes:'px-4 py-2 rounded-xl btn-primary', handler: ()=>hideModal('chaos-modal') };
-    function getPlayerCheckboxes(filterFn=()=>true, type='checkbox'){ return gameState.players.filter(filterFn).map(p=>`<label class="flex items-center gap-2"><input type="${type}" class="rounded" name="selected_players" value="${p.id}"><span>${p.name}</span></label>`).join(''); }
-    function createLotteryButton(playerCheckboxesQuery, count) { const btn = document.createElement('button'); btn.textContent = `Sorsolás (${count})`; btn.className = 'px-3 py-1.5 rounded-lg text-sm btn-secondary'; btn.onclick = (e) => { e.preventDefault(); const cbs = Array.from(document.querySelectorAll(playerCheckboxesQuery)); cbs.forEach(cb => cb.checked = false); cbs.sort(() => 0.5 - Math.random()).slice(0, count).forEach(cb => cb.checked = true); }; return btn; }
-    function createDurationSelectorHTML(id = "duration_selector") { return `<label class="block text-sm font-medium" style="color:var(--muted)">Időtartam</label><select id="${id}" class="mt-1 block w-full rounded-xl border shadow-sm p-2.5" style="border-color: var(--border); background: rgba(255,255,255,.9); color:var(--text);"><option value="1">1 nap</option><option value="2">2 nap</option><option value="3">3 nap</option><option value="4">4 nap</option><option value="5">5 nap</option><option value="random">Véletlen (1-5 nap)</option></select>`; }
-    function getDurationFromSelector(id = "duration_selector") { const v = document.getElementById(id).value; if (v === 'random') return Math.floor(Math.random() * 5) + 1; return parseInt(v) || 1; }
-    function createStartDelaySelectorHTML(id = "start_delay_selector") { return `<label class="block text-sm font-medium" style="color:var(--muted)">Késleltetés</label><select id="${id}" class="mt-1 block w-full rounded-xl border shadow-sm p-2.5" style="border-color: var(--border); background: rgba(255,255,255,.9); color:var(--text);"><option value="0">Azonnal</option><option value="1">1 nap múlva</option><option value="2">2 nap múlva</option><option value="3">3 nap múlva</option></select>`; }
-    function getStartDelayFromSelector(id = "start_delay_selector") { return parseInt(document.getElementById((id) && id).value)) || 0; }
-    function addAnnotation(label, duration, color, playerId = null, startOffset = 0) { const startRound = gameState.round + startOffset; gameState.annotations.push({ startRound, endRound: startRound + duration - 1, label, color, playerId }); }
-    function showToast(message) { const container = document.getElementById('toast-container'); const toast = document.createElement('div'); toast.className = 'toast'; toast.textContent = message; container.appendChild(toast); setTimeout(() => toast.classList.add('show'), 10); setTimeout(() => { toast.classList.remove('show'); setTimeout(() => toast.remove(), 400); }, 4000); }
+    function getPlayerCheckboxes(filterFn, type){ if (!filterFn) filterFn=function(){return true;}; if (typeof type==='undefined') type='checkbox'; return gameState.players.filter(filterFn).map(p=>`<label class="flex items-center gap-2"><input type="${type}" class="rounded" name="selected_players" value="${p.id}"><span>${p.name}</span></label>`).join(''); }
+    function createLotteryButton(playerCheckboxesQuery, count){ const btn = document.createElement('button'); btn.textContent = `Sorsolás (${count})`; btn.className = 'px-3 py-1.5 rounded-lg text-sm btn-secondary'; btn.onclick = (e) => { e.preventDefault(); const cbs = Array.from(document.querySelectorAll(playerCheckboxesQuery)); cbs.forEach(cb => cb.checked = false); cbs.sort(() => 0.5 - Math.random()).slice(0, count).forEach(cb => cb.checked = true); }; return btn; }
+    function createDurationSelectorHTML(id){ if (typeof id==='undefined') id='duration_selector'; return `<label class="block text-sm font-medium" style="color:var(--muted)">Időtartam</label><select id="${id}" class="mt-1 block w-full rounded-xl border shadow-sm p-2.5" style="border-color: var(--border); background: rgba(255,255,255,.9); color:var(--text);"><option value="1">1 nap</option><option value="2">2 nap</option><option value="3">3 nap</option><option value="4">4 nap</option><option value="5">5 nap</option><option value="random">Véletlen (1-5 nap)</option></select>`; }
+    function getDurationFromSelector(id){ if (typeof id==='undefined') id='duration_selector'; const v = document.getElementById(id).value; if (v === 'random') return Math.floor(Math.random() * 5) + 1; return parseInt(v) || 1; }
+    function createStartDelaySelectorHTML(id){ if (typeof id==='undefined') id='start_delay_selector'; return `<label class="block text-sm font-medium" style="color:var(--muted)">Késleltetés</label><select id="${id}" class="mt-1 block w-full rounded-xl border shadow-sm p-2.5" style="border-color: var(--border); background: rgba(255,255,255,.9); color:var(--text);"><option value="0">Azonnal</option><option value="1">1 nap múlva</option><option value="2">2 nap múlva</option><option value="3">3 nap múlva</option></select>`; }
+    function getStartDelayFromSelector(id){ if (typeof id==='undefined') id='start_delay_selector'; return parseInt(document.getElementById(id).value) || 0; }
+    function addAnnotation(label, duration, color, playerId, startOffset){ const startRound = gameState.round + startOffset; gameState.annotations.push({ startRound, endRound: startRound + duration - 1, label, color, playerId }); }
+    function showToast(message){ const container = document.getElementById('toast-container'); const toast = document.createElement('div'); toast.className = 'toast'; toast.textContent = message; container.appendChild(toast); setTimeout(() => toast.classList.add('show'), 10); setTimeout(() => { toast.classList.remove('show'); setTimeout(() => toast.remove(), 400); }, 4000); }
     
-    function triggerEffect(effect) { 
-        const newEffect = { ...effect, roundTriggered: gameState.round, startOffset: effect.startOffset || 0 };
+    function triggerEffect(effect){ 
+        var newEffect = Object.assign({}, effect, { roundTriggered: gameState.round, startOffset: (effect && effect.startOffset) ? effect.startOffset : 0 });
         gameState.effectHistory.push(newEffect);
         const annoLabel = newEffect.annoLabel || newEffect.name;
         const annoDuration = newEffect.type === 'instant' ? 1 : newEffect.duration;
@@ -705,7 +705,7 @@ let unsubPlayers = null;
         renderActiveEffectsPanel();
     }
     
-    function addPlayerAdjustment(playerId, amount, details) {
+    function addPlayerAdjustment(playerId, amount, details){
         const player = gameState.players.find(p => p.id === playerId);
         if (!player) return;
         player.fish += amount;
@@ -898,7 +898,7 @@ const marketCards = [
         { id:'vihar', name:"Vihar", description:`Fogási kísérlet hatékonysága: ${GAME_CONFIG.STORM_CATCH_MODIFIER*100}%`, hasDuration: true, color: annotationColors.globalBad, icon: effectIcons.negative },
     ];
 
-    function hasEffect(playerId, effectId) { 
+    function hasEffect(playerId, effectId){ 
         return gameState.effectHistory.some(e => {
             const start = e.roundTriggered + (e.startOffset || 0);
             return e.id === effectId && 
@@ -909,7 +909,7 @@ const marketCards = [
         }); 
     }
     
-    function getActiveEffectModifier(playerId, effectIdPrefix) {
+    function getActiveEffectModifier(playerId, effectIdPrefix){
       let totalModifier = 0;
       gameState.effectHistory.forEach(e => {
         const start = e.roundTriggered + (e.startOffset || 0);
@@ -984,7 +984,7 @@ const marketCards = [
       dom.setupScreen.classList.add('hidden'); dom.gameScreen.classList.remove('hidden');
     }
     
-    function updateAllUI() { 
+    function updateAllUI(){ 
         if (!gameState || !gameState.players) return; 
         updateDisplay(gameState); 
         renderActiveEffectsPanel();
@@ -997,7 +997,7 @@ const marketCards = [
         renderAuditLog();
     }
     
-    function getReputationIcon(reputation) {
+    function getReputationIcon(reputation){
         if (reputation > 2) return { icon: '😇', title: 'Példamutató' };
         if (reputation > 0) return { icon: '😊', title: 'Együttműködő' };
         if (reputation === 0) return { icon: '😐', title: 'Semleges' };
@@ -1034,7 +1034,7 @@ const marketCards = [
     }
     
     // DISZKRÉT VAGYON: Új funkció a vagyon megjelenítésére
-    function showPlayerWealth(playerId) {
+    function showPlayerWealth(playerId){
         const player = gameState.players.find(p => p.id === playerId);
         if (!player) return;
         dom.playerWealthTitle.textContent = player.name;
@@ -1052,7 +1052,7 @@ const marketCards = [
       }
     }
 
-    function checkBankruptcyWarning(event) {
+    function checkBankruptcyWarning(event){
         const input = event.target;
         const playerId = parseInt(input.dataset.playerId);
         const player = gameState.players.find(p => p.id === playerId);
@@ -1073,7 +1073,7 @@ const marketCards = [
         }
     }
 
-    function checkBankruptcyBeforeEndRound() {
+    function checkBankruptcyBeforeEndRound(){
         const potentialBankruptcies = [];
         
         gameState.players.forEach(p => {
@@ -1102,7 +1102,7 @@ const marketCards = [
     }
 
 
-    function endRound() {
+    function endRound(){
         if (!checkBankruptcyBeforeEndRound()) {
             return;
         }
@@ -1132,13 +1132,13 @@ const marketCards = [
         prepareNextRound();
     }
 
-    function saveStateForUndo() {
+    function saveStateForUndo(){
         undoStack.push(structuredClone(gameState));
         if (undoStack.length > 20) undoStack.shift();
         updateUndoButton();
     }
 
-    function gatherPlayerInputs() {
+    function gatherPlayerInputs(){
         const actions = [];
         const stormModifier = hasEffect('global', 'vihar') ? GAME_CONFIG.STORM_CATCH_MODIFIER : 1;
         gameState.players.forEach(p => {
@@ -1154,7 +1154,7 @@ const marketCards = [
         return actions;
     }
 
-    function calculateRoundMetrics(pondBefore, totalCatch) {
+    function calculateRoundMetrics(pondBefore, totalCatch){
         const season = getCurrentSeason(gameState.round);
         let baseRegen = season.regenModifier;
         if (hasEffect('global', 'aszaly')) baseRegen = GAME_CONFIG.DROUGHT_REPRODUCTION_RATE;
@@ -1169,7 +1169,7 @@ const marketCards = [
         return { regen: baseRegen, mff, overfishing };
     }
     
-    function updatePollutedWaterStatus(overfishing) {
+    function updatePollutedWaterStatus(overfishing){
         const pw = gameState.pollutedWater; if (!pw.enabled) return;
         if (pw.activeFromRound !== null) {
             if (overfishing > 0) {
@@ -1198,14 +1198,14 @@ const marketCards = [
         }
     }
     
-    function logRoundSummary(totalCatch, mff, pondBefore) { logEvent(`${getFullDay(gameState.round)}: ${totalCatch} hal kifogva (fenntartható: ${Math.floor(mff)}). Tó: ${Math.floor(pondBefore)}.`); }
-    function updateSustainabilityHistory(totalCatch, mff) { 
+    function logRoundSummary(totalCatch, mff, pondBefore){ logEvent(`${getFullDay(gameState.round)}: ${totalCatch} hal kifogva (fenntartható: ${Math.floor(mff)}). Tó: ${Math.floor(pondBefore)}.`); }
+    function updateSustainabilityHistory(totalCatch, mff){ 
         const validCatch = isNaN(totalCatch) ? 0 : totalCatch;
         const validMff = isNaN(mff) ? 0 : mff;
         gameState.history.sustainability.push({ round: gameState.round, mff: validMff, actualCatch: validCatch }); 
     }
 
-    function updatePondHealth(overfishing) {
+    function updatePondHealth(overfishing){
         if (overfishing > 0) {
             const healthChange = Math.min(Math.ceil(overfishing / GAME_CONFIG.POND_HEALTH.OVERFISHING_PENALTY_DIVISOR), GAME_CONFIG.POND_HEALTH.MAX_PENALTY_PER_ROUND);
             gameState.pondHealth -= healthChange;
@@ -1220,7 +1220,7 @@ const marketCards = [
         gameState.pondHealth = Math.max(0, Math.min(100, gameState.pondHealth));
     }
     
-    function updateAllPlayerStates(playerActions, metrics) {
+    function updateAllPlayerStates(playerActions, metrics){
         const activePlayersCount = gameState.players.filter(p => !p.isBankrupt).length;
         const fairShare = activePlayersCount > 0 ? metrics.mff / activePlayersCount : 0;
         
@@ -1250,7 +1250,7 @@ const marketCards = [
         });
     }
 
-    function calculatePlayerIncome(player, fishCaught) {
+    function calculatePlayerIncome(player, fishCaught){
         let valueModifier = GAME_CONFIG.CATCH_VALUE.DEFAULT;
         const details = ['Alapérték: 1x'];
         if (hasEffect('global', 'fertozes')) { valueModifier *= GAME_CONFIG.CATCH_VALUE.INFECTION; details.push(`Fertőzés: ${GAME_CONFIG.CATCH_VALUE.INFECTION}x`); }
@@ -1260,7 +1260,7 @@ const marketCards = [
         return { total: fishCaught * valueModifier, modifier: valueModifier, details };
     }
 
-    function updatePlayerReputation(player, fishCaught, fairShare) {
+    function updatePlayerReputation(player, fishCaught, fairShare){
         if (!player.isBankrupt) {
             if (fishCaught > fairShare * GAME_CONFIG.REPUTATION.OVERFISHING_THRESHOLD && fairShare > 0) player.reputation -= GAME_CONFIG.REPUTATION.CHANGE_VALUE;
             if (fishCaught < fairShare * GAME_CONFIG.REPUTATION.UNDERFISHING_THRESHOLD) player.reputation += GAME_CONFIG.REPUTATION.CHANGE_VALUE;
@@ -1268,7 +1268,7 @@ const marketCards = [
         }
     }
     
-    function processPlayerAdjustments(player) {
+    function processPlayerAdjustments(player){
         if (!player.adjustments || player.adjustments.length === 0) {
             return { total: 0, details: '' };
         }
@@ -1278,7 +1278,7 @@ const marketCards = [
         return { total, details };
     }
 
-    function calculatePlayerCost(player) {
+    function calculatePlayerCost(player){
         const costDetails = []; let totalCost = 0;
         const season = getCurrentSeason(gameState.round);
         if (hasEffect(player.id, 'kiralyi_kedvezmeny')) { costDetails.push('Királyi Kedvezmény: mentesség'); return {totalCost: 0, costDetails}; }
@@ -1312,7 +1312,7 @@ const marketCards = [
         if (hasEffect(player.id, 'beteg_halasz') || hasEffect(player.id, 'trening_koltseg')) { totalCost = gameState.fixedCost; costDetails.splice(0, costDetails.length, `Betegség/Tréning alapdíj: ${totalCost}`); }
         return { totalCost, costDetails };
     }
-function createAuditEntry({player, action, wealthStart, reputationStart, income, costs, adjustments, fairShare, wealthEnd, mff, totalCatch}) {
+function createAuditEntry({player, action, wealthStart, reputationStart, income, costs, adjustments, fairShare, wealthEnd, mff, totalCatch}){
         const entry = {
             round: gameState.round,
             roundData: { pondStart: gameState.history.pond[gameState.history.pond.length-1], mff, totalCatch },
@@ -1330,10 +1330,10 @@ function createAuditEntry({player, action, wealthStart, reputationStart, income,
         gameState.auditLog.push(entry);
     }
 
-    function checkPlayerBankruptcy(player) { if (!player.isBankrupt && player.fish < 0) { alert(`${player.name} csődbe ment!`); player.isBankrupt = true; player.fish = 0; logEvent(`${player.name} csődbe ment.`); } }
-    function applyPondRegeneration(regenRate) { gameState.pond = Math.min(gameState.maxPond, gameState.pond * regenRate); gameState.history.pond.push(gameState.pond); }
+    function checkPlayerBankruptcy(player){ if (!player.isBankrupt && player.fish < 0) { alert(`${player.name} csődbe ment!`); player.isBankrupt = true; player.fish = 0; logEvent(`${player.name} csődbe ment.`); } }
+    function applyPondRegeneration(regenRate){ gameState.pond = Math.min(gameState.maxPond, gameState.pond * regenRate); gameState.history.pond.push(gameState.pond); }
 
-    function prepareNextRound() {
+    function prepareNextRound(){
         gameState.round++;
         setupPlayerInputs();
         document.querySelectorAll('.player-catch-input').forEach(input => input.classList.remove('bankruptcy-warning'));
@@ -1345,8 +1345,8 @@ function createAuditEntry({player, action, wealthStart, reputationStart, income,
         updateAllUI();
     }
     
-    function undoLastRound() { if (undoStack.length === 0) return; gameState = undoStack.pop(); logEvent("--- UTOLSÓ NAP VISSZAVONVA ---", { isDetail: true }); setupPlayerInputs(); updateAllUI(); updateUndoButton(); }
-    function updateUndoButton() { dom.undoBtn.disabled = undoStack.length === 0; }
+    function undoLastRound(){ if (undoStack.length === 0) return; gameState = undoStack.pop(); logEvent("--- UTOLSÓ NAP VISSZAVONVA ---", { isDetail: true }); setupPlayerInputs(); updateAllUI(); updateUndoButton(); }
+    function updateUndoButton(){ dom.undoBtn.disabled = undoStack.length === 0; }
 
     function updateAnalyticsPanels(){
       dom.sustainabilityTableBody.innerHTML=''; if(!gameState.history) return;
@@ -1358,7 +1358,7 @@ function createAuditEntry({player, action, wealthStart, reputationStart, income,
     }
 
     // === v8.9 ÚJ FUNKCIÓ ===
-    function renderDebriefingTable() {
+    function renderDebriefingTable(){
         if (!dom.debriefTableBody || !gameState.players) return;
 
         let bodyHtml = '';
@@ -1430,7 +1430,7 @@ function createAuditEntry({player, action, wealthStart, reputationStart, income,
     // === v8.9 VÉGE ===
 
     // === v8.10 ÚJ FUNKCIÓK START ===
-    function populateDivinePlayerSelector() {
+    function populateDivinePlayerSelector(){
         if (!dom.divinePlayerSelector || !gameState.players) return;
         dom.divinePlayerSelector.innerHTML = '';
         gameState.players.forEach(p => {
@@ -1459,7 +1459,7 @@ function createAuditEntry({player, action, wealthStart, reputationStart, income,
         });
     }
 
-    function getDivineTargets() {
+    function getDivineTargets(){
         const selectedPlayers = Array.from(document.querySelectorAll('.divine-target-player:checked')).map(cb => parseInt(cb.value));
         
         if (selectedPlayers.length > 0) {
@@ -1472,7 +1472,7 @@ function createAuditEntry({player, action, wealthStart, reputationStart, income,
     }
     // === v8.10 ÚJ FUNKCIÓK VÉGE ===
 
-    function getPondHealthStatusText(health) {
+    function getPondHealthStatusText(health){
         if (health > 80) return "Kiváló";
         if (health > 50) return "Stabil";
         if (health > 25) return "Sérülékeny";
@@ -1539,7 +1539,7 @@ function updateDisplay(s){
       }
     }
     
-    function updateStatCardHighlights() {
+    function updateStatCardHighlights(){
       const effectMap = {
         'decree': dom.fixedCostCard, 'divine_tax': dom.fixedCostCard, 'kiralyi_ado': dom.fixedCostCard,
         'csaladi_ugyek_effect': dom.fixedCostCard,
@@ -1558,7 +1558,7 @@ function updateDisplay(s){
       }
     }
 
-    function generateDailyAnalysis() {
+    function generateDailyAnalysis(){
         const { players, history, round } = gameState;
         const activePlayers = players.filter(p => !p.isBankrupt);
         if (activePlayers.length < 2) return "A közösség sorsa egyetlen halász kezében van.";
@@ -1606,7 +1606,7 @@ function updateDisplay(s){
     }
 
 
-    function getAdvisorSuggestions() {
+    function getAdvisorSuggestions(){
         const suggestions = [];
         const { pondHealth, players, round, pollutedWater } = gameState;
         
@@ -1695,7 +1695,7 @@ function updateDisplay(s){
         return suggestions;
     }
 
-    function updateAdvisorPanel() {
+    function updateAdvisorPanel(){
         dom.eventAdvisorPanel.innerHTML = '';
         const suggestions = getAdvisorSuggestions();
         let content = `<h3 class="text-sm font-semibold mb-2" style="color:var(--muted)">Eseménytanácsadó</h3>`;
@@ -1723,7 +1723,7 @@ function updateDisplay(s){
         dom.eventAdvisorPanel.innerHTML = content;
     }
     
-    function renderActiveEffectsPanel() {
+    function renderActiveEffectsPanel(){
         const allEffects = [...gameState.effectHistory].sort((a,b) => b.roundTriggered - b.roundTriggered);
 
         if (allEffects.length === 0 && !gameState.pollutedWater.enabled) {
@@ -1840,7 +1840,7 @@ function updateDisplay(s){
         `;
     }
 
-    function populateAuditLogFilter() {
+    function populateAuditLogFilter(){
         dom.auditLogPlayerFilter.innerHTML = '<option value="all">Mindenki</option>';
         gameState.players.forEach(p => {
             const opt = document.createElement('option');
@@ -1850,7 +1850,7 @@ function updateDisplay(s){
         });
     }
 
-    function renderAuditLog() {
+    function renderAuditLog(){
         populateAuditLogFilter();
         const filter = dom.auditLogPlayerFilter.value;
         const groupingMode = document.querySelector('input[name="audit-grouping"]:checked').value;
@@ -1903,7 +1903,7 @@ function updateDisplay(s){
         dom.auditLogTableContainer.innerHTML = tableHTML;
     }
 
-    function renderAuditLogRow(entry, mode) {
+    function renderAuditLogRow(entry, mode){
         const catchColor = entry.catch.actual > entry.fairShare ? 'var(--c-red)' : '#227a66';
         const repChangeText = entry.reputationChange > 0 ? `+${entry.reputationChange}` : entry.reputationChange;
         const repColor = entry.reputationChange < 0 ? 'var(--c-red)' : (entry.reputationChange > 0 ? '#227a66' : 'var(--muted)');
@@ -2035,15 +2035,15 @@ function updateDisplay(s){
     }
     function getBlocksToExport(){ const picks = Array.from(document.querySelectorAll('input[name="pdf-sections"]:checked')).map(i=>i.value); const defaultSelectors = ['#chart1-container','#sustainability-container','#chart3-container','#chart4-container']; const selectors = (picks.length ? picks : defaultSelectors); const list=[]; selectors.forEach(sel=>{ let el = document.querySelector(sel); if (sel === '#log-panel' && document.querySelector('#log-panel-printable')) el = document.querySelector('#log-panel-printable'); if(el) list.push(el); }); return list; }
     const logToggleBtn = document.getElementById('log-toggle-btn'), logPanel = document.getElementById('log-panel'), logCloseBtn = document.getElementById('log-close-btn'), logContent = document.getElementById('log-content');
-    function logEvent(text, options = {}) { if (!gameState.log) gameState.log = []; const timestamp = new Date().toLocaleTimeString('hu-HU', { hour: '2-digit', minute: '2-digit' }); gameState.log.push({ text, timestamp, flagged: false, notes: '', isDetail: options.isDetail || false }); renderLog(); }
-    function renderLog() { if (!logContent) return; const logHtml = (gameState.log || []).map((entry, index) => `<div class="log-entry text-sm p-2 rounded-lg ${entry.flagged ? 'border-l-4 border-amber-400' : ''} ${entry.isDetail ? 'log-entry-detail':''}" style="background: rgba(20,35,60,0.05);" data-log-round="${Math.ceil((index+1)/gameState.players.length)}"><div class="flex justify-between items-start"><div><span class="font-mono text-xs opacity-60">${entry.timestamp}</span><p class="leading-tight">${entry.text}</p></div><button class="log-flag-btn p-1 opacity-50 hover:opacity-100 ${entry.flagged ? 'opacity-100' : ''}" data-index="${index}" title="Fontos esemény megjelölése"><svg class="w-4 h-4" fill="${entry.flagged ? 'var(--c-gold)' : 'currentColor'}" viewBox="0 0 20 20"><path d="M3 3a1 1 0 00-1 1v12a1 1 0 001 1h1a1 1 0 001-1V4a1 1 0 00-1-1H3zm3.707 1.293a1 1 0 00-1.414 0l-2 2a1 1 0 000 1.414l2 2a1 1 0 001.414-1.414L5.414 7H16a1 1 0 100-2H5.414l1.293-1.293a1 1 0 000-1.414z"></path></svg></button></div>${entry.flagged ? `<textarea class="log-entry-note w-full mt-2 p-1.5 rounded" data-index="${index}" placeholder="Jegyzet...">${entry.notes}</textarea>` : ''}</div>`).reverse().join(''); logContent.innerHTML = logHtml || '<p class="text-xs text-center p-4" style="color:var(--muted)">A napló üres.</p>'; logContent.scrollTop = 0; }
+    function logEvent(text, options){ if (!gameState.log) gameState.log = []; const timestamp = new Date().toLocaleTimeString('hu-HU', { hour: '2-digit', minute: '2-digit' }); gameState.log.push({ text, timestamp, flagged: false, notes: '', isDetail: options.isDetail || false }); renderLog(); }
+    function renderLog(){ if (!logContent) return; const logHtml = (gameState.log || []).map((entry, index) => `<div class="log-entry text-sm p-2 rounded-lg ${entry.flagged ? 'border-l-4 border-amber-400' : ''} ${entry.isDetail ? 'log-entry-detail':''}" style="background: rgba(20,35,60,0.05);" data-log-round="${Math.ceil((index+1)/gameState.players.length)}"><div class="flex justify-between items-start"><div><span class="font-mono text-xs opacity-60">${entry.timestamp}</span><p class="leading-tight">${entry.text}</p></div><button class="log-flag-btn p-1 opacity-50 hover:opacity-100 ${entry.flagged ? 'opacity-100' : ''}" data-index="${index}" title="Fontos esemény megjelölése"><svg class="w-4 h-4" fill="${entry.flagged ? 'var(--c-gold)' : 'currentColor'}" viewBox="0 0 20 20"><path d="M3 3a1 1 0 00-1 1v12a1 1 0 001 1h1a1 1 0 001-1V4a1 1 0 00-1-1H3zm3.707 1.293a1 1 0 00-1.414 0l-2 2a1 1 0 000 1.414l2 2a1 1 0 001.414-1.414L5.414 7H16a1 1 0 100-2H5.414l1.293-1.293a1 1 0 000-1.414z"></path></svg></button></div>${entry.flagged ? `<textarea class="log-entry-note w-full mt-2 p-1.5 rounded" data-index="${index}" placeholder="Jegyzet...">${entry.notes}</textarea>` : ''}</div>`).reverse().join(''); logContent.innerHTML = logHtml || '<p class="text-xs text-center p-4" style="color:var(--muted)">A napló üres.</p>'; logContent.scrollTop = 0; }
     logToggleBtn.addEventListener('click', () => logPanel.classList.toggle('open')); logCloseBtn.addEventListener('click', () => logPanel.classList.remove('open'));
     logContent.addEventListener('click', (e) => { const btn = e.target.closest('.log-flag-btn'); if (btn) { const index = parseInt(btn.dataset.index); gameState.log[index].flagged = !gameState.log[index].flagged; renderLog(); } });
     logContent.addEventListener('input', (e) => { const textarea = e.target.closest('.log-entry-note'); if (textarea) { const index = parseInt(textarea.dataset.index); gameState.log[index].notes = textarea.value; } });
     const timerDisplay = document.getElementById('timer-display'), timerSelect = document.getElementById('timer-select'), timerMute = document.getElementById('timer-mute'), timerStartBtn = document.getElementById('timer-start-btn'), timerResetBtn = document.getElementById('timer-reset-btn'); let timerInterval = null, timeLeft = parseInt(timerSelect.value); const timerSound = new Audio('data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU'+Array(300).join('123'));
-    function updateTimerDisplay() { const minutes = String(Math.floor(timeLeft / 60)).padStart(2, '0'); const seconds = String(timeLeft % 60).padStart(2, '0'); timerDisplay.textContent = `${minutes}:${seconds}`; }
-    function startTimer() { if (timerInterval) return; timerStartBtn.textContent = "Szünet"; timerInterval = setInterval(() => { timeLeft--; updateTimerDisplay(); if (timeLeft <= 0) { clearInterval(timerInterval); timerInterval = null; if (!timerMute.checked) timerSound.play(); alert("Lejárt az idő!"); timerStartBtn.textContent = "Start"; } }, 1000); }
-    function pauseTimer() { clearInterval(timerInterval); timerInterval = null; timerStartBtn.textContent = "Start"; } function resetTimer() { pauseTimer(); timeLeft = parseInt(timerSelect.value); updateTimerDisplay(); }
+    function updateTimerDisplay(){ const minutes = String(Math.floor(timeLeft / 60)).padStart(2, '0'); const seconds = String(timeLeft % 60).padStart(2, '0'); timerDisplay.textContent = `${minutes}:${seconds}`; }
+    function startTimer(){ if (timerInterval) return; timerStartBtn.textContent = "Szünet"; timerInterval = setInterval(() => { timeLeft--; updateTimerDisplay(); if (timeLeft <= 0) { clearInterval(timerInterval); timerInterval = null; if (!timerMute.checked) timerSound.play(); alert("Lejárt az idő!"); timerStartBtn.textContent = "Start"; } }, 1000); }
+    function pauseTimer(){ clearInterval(timerInterval); timerInterval = null; timerStartBtn.textContent = "Start"; } function resetTimer(){ pauseTimer(); timeLeft = parseInt(timerSelect.value); updateTimerDisplay(); }
     timerStartBtn.addEventListener('click', () => timerInterval ? pauseTimer() : startTimer()); timerResetBtn.addEventListener('click', resetTimer); timerSelect.addEventListener('change', resetTimer);
     document.addEventListener('DOMContentLoaded', () => {
       const key='theme', root = document.documentElement, saved = localStorage.getItem(key);
@@ -2353,7 +2353,7 @@ function updateDisplay(s){
     document.body.appendChild(qrModal);
 
     // ROLE GATING
-    function showPlayerOnly() {
+    function showPlayerOnly(){
       // hide original dashboard for player role
       const kids = Array.from(document.body.children);
       for (const el of kids) {
@@ -2362,7 +2362,7 @@ function updateDisplay(s){
       }
       $('#olPlayerView').style.display = 'block';
     }
-    function showHostOnly() {
+    function showHostOnly(){
       $('#olHostTools').style.display = 'block';
     }
 
@@ -2415,7 +2415,7 @@ function updateDisplay(s){
     });
 
     // ---------------- PLAYER ----------------
-    function playerBoot() {
+    function playerBoot(){
       // join button
       $('#olJoin').onclick = joinRoom;
       $('#olSend').onclick = sendIntent;
@@ -2431,7 +2431,7 @@ function updateDisplay(s){
       bindOwnPlayerRealtime();
     }
 
-    async function joinRoom() {
+    async function joinRoom(){
       const name = ($('#olPlayerName').value || 'Játékos').trim();
       const s = await getDoc(S(room));
       if (!s.exists()) { $('#olJoinMsg').textContent = 'A szoba nem létezik.'; return; }
@@ -2449,7 +2449,7 @@ function updateDisplay(s){
       bindOwnPlayerRealtime();
     }
 
-    async function bindOwnPlayerRealtime() {
+    async function bindOwnPlayerRealtime(){
       // wallet/last/effect mirror from session-level published data (host publishes after endRound)
       onSnapshot(S(room), async (snap) => {
         const d = snap.data() || {};
@@ -2462,7 +2462,7 @@ function updateDisplay(s){
       });
     }
 
-    async function sendIntent() {
+    async function sendIntent(){
       if (!playerId) { $('#olSendMsg').textContent = 'Előbb csatlakozz!'; return; }
       const s = await getDoc(S(room));
       const r = Number((s.data() && s.data().round) || 1);
@@ -2477,7 +2477,7 @@ function updateDisplay(s){
     }
 
     // ---------------- HOST ----------------
-    async function hostBoot() {
+    async function hostBoot(){
       if (!room) { room = Math.random().toString(36).slice(2,8); u.searchParams.set('room', room); history.replaceState({}, "", u); }
       $('#olRoomLbl').textContent = room;
 
@@ -2520,7 +2520,7 @@ new QRCode(box, { text: link, width: 220, height: 220 });
 ?role=player&room=${encodeURIComponent(room)}`;
     }
 
-    function renderMappingUI() {
+    function renderMappingUI(){
       if (unsubPlayers) { try { unsubPlayers(); } catch(e){} unsubPlayers = null; }
 const el = $('#olMapList'); el.innerHTML='';
       // list remote players
@@ -2544,7 +2544,7 @@ const el = $('#olMapList'); el.innerHTML='';
       });
     }
 
-    function bindIntentsToInputs() {
+    function bindIntentsToInputs(){
       if (unsubCatches) { try { unsubCatches(); } catch(e){} unsubCatches = null; }
 // whenever catches for the current round arrive, write them into the corresponding host input fields
       onSnapshot(S(room), (snap) => { currentRound = (snap.data() && snap.data().round) || 1; });
@@ -2563,10 +2563,10 @@ const el = $('#olMapList'); el.innerHTML='';
       });
     }
 
-    function patchEndRoundPublish() {
+    function patchEndRoundPublish(){
       const orig = window.endRound;
       if (typeof orig !== 'function') return; // safety
-      window.endRound = function patchedEndRound() {
+      window.endRound = function patchedEndRound(){
         const prevRound = window.(gameState && gameState.round);
         const res = orig.apply(this, arguments);
         // after original logic completes, publish
@@ -2575,7 +2575,7 @@ const el = $('#olMapList'); el.innerHTML='';
       };
     }
 
-    async function publishStateFromDashboard(prevRoundGuess) {
+    async function publishStateFromDashboard(prevRoundGuess){
       try {
         const gs = window.gameState || {};
         const sref = S(room);
