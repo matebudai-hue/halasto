@@ -5,21 +5,7 @@
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>Halastó – Facilitátor Dashboard v8.10 (Pilótafülke)</title>
-<script src="https://cdn.tailwindcss.com">
-
-
-
-function ensureQRCodeReady(){
-  if (!window.QRCode) {
-    alert('QR könyvtár még nem töltődött be. Próbáld újra pár másodperc múlva.');
-    return false;
-  }
-  return true;
-}
-
-let unsubCatches = null;
-let unsubPlayers = null;
-</script>
+<script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -668,14 +654,14 @@ let unsubPlayers = null;
         }
     };
 
-    function getDayOfWeek(round){ if (round === 0) return 'Kezdeti állapot'; const days = ['Hétfő', 'Kedd', 'Szerda', 'Csütörtök', 'Péntek', 'Szombat', 'Vasárnap']; return days[(round - 1) % 7]; }
-    function getCurrentSeason(round){ const S = GAME_CONFIG.SEASONS; const seasonIndex = Math.floor(((round - 1) % (S.cycleLength * S.seasons.length)) / S.cycleLength); return S.seasons[seasonIndex]; }
-    function getFullDay(round){ return `${round}. nap (${getDayOfWeek(round)})`; }
-    function triggerFlash(){ dom.flashOverlay.classList.add('active'); setTimeout(() => dom.flashOverlay.classList.remove('active'), 150); }
-    function animateNumber(el, to, ms, suffix){ if (typeof ms==='undefined') ms=420; if (typeof suffix==='undefined') suffix=''; const from = parseInt((el.textContent||'').replace(/\D/g,'')) || 0; if (from === to) { el.textContent = to.toLocaleString('hu-HU') + suffix; return; } const start = performance.now(); const fmt = n => Math.round(n).toLocaleString('hu-HU') + suffix; function tick(t){ const p = Math.min(1, (t-start)/ms); const eased = p<.5 ? 2*p*p : -1+(4-2*p)*p; el.textContent = fmt(from + (to-from)*eased); if(p<1) requestAnimationFrame(tick); } requestAnimationFrame(tick); }
-    function showModal(modalId){ if (typeof modalId==='undefined') modalId='chaos-modal'; const modal = document.getElementById(modalId); if(modal) { modal.classList.remove('opacity-0','pointer-events-none'); modal.querySelector('div>div').classList.remove('scale-95'); } }
-    function hideModal(modalId){ if (typeof modalId==='undefined') modalId='chaos-modal'; const modal = document.getElementById(modalId); if(modal) { modal.classList.add('opacity-0','pointer-events-none'); modal.querySelector('div>div').classList.add('scale-95'); } }
-    function createModalElements(title, bodyHTML, footerButtons, type){ if (typeof type==='undefined') type='neutral';
+    function getDayOfWeek(round) { if (round === 0) return 'Kezdeti állapot'; const days = ['Hétfő', 'Kedd', 'Szerda', 'Csütörtök', 'Péntek', 'Szombat', 'Vasárnap']; return days[(round - 1) % 7]; }
+    function getCurrentSeason(round) { const S = GAME_CONFIG.SEASONS; const seasonIndex = Math.floor(((round - 1) % (S.cycleLength * S.seasons.length)) / S.cycleLength); return S.seasons[seasonIndex]; }
+    function getFullDay(round) { return `${round}. nap (${getDayOfWeek(round)})`; }
+    function triggerFlash() { dom.flashOverlay.classList.add('active'); setTimeout(() => dom.flashOverlay.classList.remove('active'), 150); }
+    function animateNumber(el, to, ms=420, suffix=''){ const from = parseInt((el.textContent||'').replace(/\D/g,'')) || 0; if (from === to) { el.textContent = to.toLocaleString('hu-HU') + suffix; return; } const start = performance.now(); const fmt = n => Math.round(n).toLocaleString('hu-HU') + suffix; function tick(t){ const p = Math.min(1, (t-start)/ms); const eased = p<.5 ? 2*p*p : -1+(4-2*p)*p; el.textContent = fmt(from + (to-from)*eased); if(p<1) requestAnimationFrame(tick); } requestAnimationFrame(tick); }
+    function showModal(modalId = 'chaos-modal') { const modal = document.getElementById(modalId); if(modal) { modal.classList.remove('opacity-0','pointer-events-none'); modal.querySelector('div>div').classList.remove('scale-95'); } }
+    function hideModal(modalId = 'chaos-modal') { const modal = document.getElementById(modalId); if(modal) { modal.classList.add('opacity-0','pointer-events-none'); modal.querySelector('div>div').classList.add('scale-95'); } }
+    function createModalElements(title, bodyHTML, footerButtons, type = 'neutral'){
         const modalContent = dom.chaosModal.querySelector('div>div');
         modalContent.classList.remove('modal-type-good', 'modal-type-bad', 'modal-type-neutral');
         if (type === 'good') modalContent.classList.add('modal-type-good');
@@ -685,17 +671,17 @@ let unsubPlayers = null;
     }
     const modalCancelButton = { text:'Mégse', classes:'px-4 py-2 rounded-xl', handler: ()=>hideModal('chaos-modal') };
     const modalOKButton = { text:'Értettem', classes:'px-4 py-2 rounded-xl btn-primary', handler: ()=>hideModal('chaos-modal') };
-    function getPlayerCheckboxes(filterFn, type){ if (!filterFn) filterFn=function(){return true;}; if (typeof type==='undefined') type='checkbox'; return gameState.players.filter(filterFn).map(p=>`<label class="flex items-center gap-2"><input type="${type}" class="rounded" name="selected_players" value="${p.id}"><span>${p.name}</span></label>`).join(''); }
-    function createLotteryButton(playerCheckboxesQuery, count){ const btn = document.createElement('button'); btn.textContent = `Sorsolás (${count})`; btn.className = 'px-3 py-1.5 rounded-lg text-sm btn-secondary'; btn.onclick = (e) => { e.preventDefault(); const cbs = Array.from(document.querySelectorAll(playerCheckboxesQuery)); cbs.forEach(cb => cb.checked = false); cbs.sort(() => 0.5 - Math.random()).slice(0, count).forEach(cb => cb.checked = true); }; return btn; }
-    function createDurationSelectorHTML(id){ if (typeof id==='undefined') id='duration_selector'; return `<label class="block text-sm font-medium" style="color:var(--muted)">Időtartam</label><select id="${id}" class="mt-1 block w-full rounded-xl border shadow-sm p-2.5" style="border-color: var(--border); background: rgba(255,255,255,.9); color:var(--text);"><option value="1">1 nap</option><option value="2">2 nap</option><option value="3">3 nap</option><option value="4">4 nap</option><option value="5">5 nap</option><option value="random">Véletlen (1-5 nap)</option></select>`; }
-    function getDurationFromSelector(id){ if (typeof id==='undefined') id='duration_selector'; const v = document.getElementById(id).value; if (v === 'random') return Math.floor(Math.random() * 5) + 1; return parseInt(v) || 1; }
-    function createStartDelaySelectorHTML(id){ if (typeof id==='undefined') id='start_delay_selector'; return `<label class="block text-sm font-medium" style="color:var(--muted)">Késleltetés</label><select id="${id}" class="mt-1 block w-full rounded-xl border shadow-sm p-2.5" style="border-color: var(--border); background: rgba(255,255,255,.9); color:var(--text);"><option value="0">Azonnal</option><option value="1">1 nap múlva</option><option value="2">2 nap múlva</option><option value="3">3 nap múlva</option></select>`; }
-    function getStartDelayFromSelector(id){ if (typeof id==='undefined') id='start_delay_selector'; return parseInt(document.getElementById(id).value) || 0; }
-    function addAnnotation(label, duration, color, playerId, startOffset){ const startRound = gameState.round + startOffset; gameState.annotations.push({ startRound, endRound: startRound + duration - 1, label, color, playerId }); }
-    function showToast(message){ const container = document.getElementById('toast-container'); const toast = document.createElement('div'); toast.className = 'toast'; toast.textContent = message; container.appendChild(toast); setTimeout(() => toast.classList.add('show'), 10); setTimeout(() => { toast.classList.remove('show'); setTimeout(() => toast.remove(), 400); }, 4000); }
+    function getPlayerCheckboxes(filterFn=()=>true, type='checkbox'){ return gameState.players.filter(filterFn).map(p=>`<label class="flex items-center gap-2"><input type="${type}" class="rounded" name="selected_players" value="${p.id}"><span>${p.name}</span></label>`).join(''); }
+    function createLotteryButton(playerCheckboxesQuery, count) { const btn = document.createElement('button'); btn.textContent = `Sorsolás (${count})`; btn.className = 'px-3 py-1.5 rounded-lg text-sm btn-secondary'; btn.onclick = (e) => { e.preventDefault(); const cbs = Array.from(document.querySelectorAll(playerCheckboxesQuery)); cbs.forEach(cb => cb.checked = false); cbs.sort(() => 0.5 - Math.random()).slice(0, count).forEach(cb => cb.checked = true); }; return btn; }
+    function createDurationSelectorHTML(id = "duration_selector") { return `<label class="block text-sm font-medium" style="color:var(--muted)">Időtartam</label><select id="${id}" class="mt-1 block w-full rounded-xl border shadow-sm p-2.5" style="border-color: var(--border); background: rgba(255,255,255,.9); color:var(--text);"><option value="1">1 nap</option><option value="2">2 nap</option><option value="3">3 nap</option><option value="4">4 nap</option><option value="5">5 nap</option><option value="random">Véletlen (1-5 nap)</option></select>`; }
+    function getDurationFromSelector(id = "duration_selector") { const v = document.getElementById(id).value; if (v === 'random') return Math.floor(Math.random() * 5) + 1; return parseInt(v) || 1; }
+    function createStartDelaySelectorHTML(id = "start_delay_selector") { return `<label class="block text-sm font-medium" style="color:var(--muted)">Késleltetés</label><select id="${id}" class="mt-1 block w-full rounded-xl border shadow-sm p-2.5" style="border-color: var(--border); background: rgba(255,255,255,.9); color:var(--text);"><option value="0">Azonnal</option><option value="1">1 nap múlva</option><option value="2">2 nap múlva</option><option value="3">3 nap múlva</option></select>`; }
+    function getStartDelayFromSelector(id = "start_delay_selector") { return parseInt(document.getElementById(id)?.value) || 0; }
+    function addAnnotation(label, duration, color, playerId = null, startOffset = 0) { const startRound = gameState.round + startOffset; gameState.annotations.push({ startRound, endRound: startRound + duration - 1, label, color, playerId }); }
+    function showToast(message) { const container = document.getElementById('toast-container'); const toast = document.createElement('div'); toast.className = 'toast'; toast.textContent = message; container.appendChild(toast); setTimeout(() => toast.classList.add('show'), 10); setTimeout(() => { toast.classList.remove('show'); setTimeout(() => toast.remove(), 400); }, 4000); }
     
-    function triggerEffect(effect){ 
-        var newEffect = Object.assign({}, effect, { roundTriggered: gameState.round, startOffset: (effect && effect.startOffset) ? effect.startOffset : 0 });
+    function triggerEffect(effect) { 
+        const newEffect = { ...effect, roundTriggered: gameState.round, startOffset: effect.startOffset || 0 };
         gameState.effectHistory.push(newEffect);
         const annoLabel = newEffect.annoLabel || newEffect.name;
         const annoDuration = newEffect.type === 'instant' ? 1 : newEffect.duration;
@@ -705,7 +691,7 @@ let unsubPlayers = null;
         renderActiveEffectsPanel();
     }
     
-    function addPlayerAdjustment(playerId, amount, details){
+    function addPlayerAdjustment(playerId, amount, details) {
         const player = gameState.players.find(p => p.id === playerId);
         if (!player) return;
         player.fish += amount;
@@ -815,7 +801,7 @@ let unsubPlayers = null;
         {
             id:'beteg_halasz', title:'A Beteg Halász',
             setupModal: function() { const body = `<p>Válaszd ki a beteg halászt.</p><div class="space-y-2 my-3">${getPlayerCheckboxes(p=>!p.isBankrupt && !hasEffect(p.id, 'beteg_halasz'), 'radio')}</div><div class="grid grid-cols-2 gap-4">${createDurationSelectorHTML()}${createStartDelaySelectorHTML()}</div>`; const buttons = [modalCancelButton, {text:'Alkalmaz', classes:'px-4 py-2 rounded-xl btn-secondary',handler:()=>this.apply()}]; createModalElements(this.title, body, buttons, 'bad'); },
-            apply: function(params = {}){ const d = params.duration || getDurationFromSelector(); const o = params.offset !== undefined ? params.offset : getStartDelayFromSelector(); const selected = params.players ? params.players[0] : gameState.players.find(x=>x.id==document.querySelector('input[name="selected_players"]:checked'() && ).value)); if(selected){ triggerEffect({ id: this.id, name: 'Betegség', type: 'duration', duration: d, startOffset: o, description: 'Nem halászhat.', annoLabel: `Beteg (${selected.name})`, targets: [selected.id], color: annotationColors.playerBad, icon: effectIcons.player }); } hideModal('chaos-modal'); setupPlayerInputs(); }
+            apply: function(params = {}){ const d = params.duration || getDurationFromSelector(); const o = params.offset !== undefined ? params.offset : getStartDelayFromSelector(); const selected = params.players ? params.players[0] : gameState.players.find(x=>x.id==document.querySelector('input[name="selected_players"]:checked')?.value); if(selected){ triggerEffect({ id: this.id, name: 'Betegség', type: 'duration', duration: d, startOffset: o, description: 'Nem halászhat.', annoLabel: `Beteg (${selected.name})`, targets: [selected.id], color: annotationColors.playerBad, icon: effectIcons.player }); } hideModal('chaos-modal'); setupPlayerInputs(); }
         },
         {
             id:'kiralyi_sarc', title:'Királyi Sarc', isInstant: true,
@@ -898,7 +884,7 @@ const marketCards = [
         { id:'vihar', name:"Vihar", description:`Fogási kísérlet hatékonysága: ${GAME_CONFIG.STORM_CATCH_MODIFIER*100}%`, hasDuration: true, color: annotationColors.globalBad, icon: effectIcons.negative },
     ];
 
-    function hasEffect(playerId, effectId){ 
+    function hasEffect(playerId, effectId) { 
         return gameState.effectHistory.some(e => {
             const start = e.roundTriggered + (e.startOffset || 0);
             return e.id === effectId && 
@@ -909,7 +895,7 @@ const marketCards = [
         }); 
     }
     
-    function getActiveEffectModifier(playerId, effectIdPrefix){
+    function getActiveEffectModifier(playerId, effectIdPrefix) {
       let totalModifier = 0;
       gameState.effectHistory.forEach(e => {
         const start = e.roundTriggered + (e.startOffset || 0);
@@ -984,7 +970,7 @@ const marketCards = [
       dom.setupScreen.classList.add('hidden'); dom.gameScreen.classList.remove('hidden');
     }
     
-    function updateAllUI(){ 
+    function updateAllUI() { 
         if (!gameState || !gameState.players) return; 
         updateDisplay(gameState); 
         renderActiveEffectsPanel();
@@ -997,7 +983,7 @@ const marketCards = [
         renderAuditLog();
     }
     
-    function getReputationIcon(reputation){
+    function getReputationIcon(reputation) {
         if (reputation > 2) return { icon: '😇', title: 'Példamutató' };
         if (reputation > 0) return { icon: '😊', title: 'Együttműködő' };
         if (reputation === 0) return { icon: '😐', title: 'Semleges' };
@@ -1034,7 +1020,7 @@ const marketCards = [
     }
     
     // DISZKRÉT VAGYON: Új funkció a vagyon megjelenítésére
-    function showPlayerWealth(playerId){
+    function showPlayerWealth(playerId) {
         const player = gameState.players.find(p => p.id === playerId);
         if (!player) return;
         dom.playerWealthTitle.textContent = player.name;
@@ -1052,7 +1038,7 @@ const marketCards = [
       }
     }
 
-    function checkBankruptcyWarning(event){
+    function checkBankruptcyWarning(event) {
         const input = event.target;
         const playerId = parseInt(input.dataset.playerId);
         const player = gameState.players.find(p => p.id === playerId);
@@ -1073,7 +1059,7 @@ const marketCards = [
         }
     }
 
-    function checkBankruptcyBeforeEndRound(){
+    function checkBankruptcyBeforeEndRound() {
         const potentialBankruptcies = [];
         
         gameState.players.forEach(p => {
@@ -1102,7 +1088,7 @@ const marketCards = [
     }
 
 
-    function endRound(){
+    function endRound() {
         if (!checkBankruptcyBeforeEndRound()) {
             return;
         }
@@ -1132,13 +1118,13 @@ const marketCards = [
         prepareNextRound();
     }
 
-    function saveStateForUndo(){
+    function saveStateForUndo() {
         undoStack.push(structuredClone(gameState));
         if (undoStack.length > 20) undoStack.shift();
         updateUndoButton();
     }
 
-    function gatherPlayerInputs(){
+    function gatherPlayerInputs() {
         const actions = [];
         const stormModifier = hasEffect('global', 'vihar') ? GAME_CONFIG.STORM_CATCH_MODIFIER : 1;
         gameState.players.forEach(p => {
@@ -1154,7 +1140,7 @@ const marketCards = [
         return actions;
     }
 
-    function calculateRoundMetrics(pondBefore, totalCatch){
+    function calculateRoundMetrics(pondBefore, totalCatch) {
         const season = getCurrentSeason(gameState.round);
         let baseRegen = season.regenModifier;
         if (hasEffect('global', 'aszaly')) baseRegen = GAME_CONFIG.DROUGHT_REPRODUCTION_RATE;
@@ -1169,7 +1155,7 @@ const marketCards = [
         return { regen: baseRegen, mff, overfishing };
     }
     
-    function updatePollutedWaterStatus(overfishing){
+    function updatePollutedWaterStatus(overfishing) {
         const pw = gameState.pollutedWater; if (!pw.enabled) return;
         if (pw.activeFromRound !== null) {
             if (overfishing > 0) {
@@ -1198,14 +1184,14 @@ const marketCards = [
         }
     }
     
-    function logRoundSummary(totalCatch, mff, pondBefore){ logEvent(`${getFullDay(gameState.round)}: ${totalCatch} hal kifogva (fenntartható: ${Math.floor(mff)}). Tó: ${Math.floor(pondBefore)}.`); }
-    function updateSustainabilityHistory(totalCatch, mff){ 
+    function logRoundSummary(totalCatch, mff, pondBefore) { logEvent(`${getFullDay(gameState.round)}: ${totalCatch} hal kifogva (fenntartható: ${Math.floor(mff)}). Tó: ${Math.floor(pondBefore)}.`); }
+    function updateSustainabilityHistory(totalCatch, mff) { 
         const validCatch = isNaN(totalCatch) ? 0 : totalCatch;
         const validMff = isNaN(mff) ? 0 : mff;
         gameState.history.sustainability.push({ round: gameState.round, mff: validMff, actualCatch: validCatch }); 
     }
 
-    function updatePondHealth(overfishing){
+    function updatePondHealth(overfishing) {
         if (overfishing > 0) {
             const healthChange = Math.min(Math.ceil(overfishing / GAME_CONFIG.POND_HEALTH.OVERFISHING_PENALTY_DIVISOR), GAME_CONFIG.POND_HEALTH.MAX_PENALTY_PER_ROUND);
             gameState.pondHealth -= healthChange;
@@ -1220,7 +1206,7 @@ const marketCards = [
         gameState.pondHealth = Math.max(0, Math.min(100, gameState.pondHealth));
     }
     
-    function updateAllPlayerStates(playerActions, metrics){
+    function updateAllPlayerStates(playerActions, metrics) {
         const activePlayersCount = gameState.players.filter(p => !p.isBankrupt).length;
         const fairShare = activePlayersCount > 0 ? metrics.mff / activePlayersCount : 0;
         
@@ -1250,7 +1236,7 @@ const marketCards = [
         });
     }
 
-    function calculatePlayerIncome(player, fishCaught){
+    function calculatePlayerIncome(player, fishCaught) {
         let valueModifier = GAME_CONFIG.CATCH_VALUE.DEFAULT;
         const details = ['Alapérték: 1x'];
         if (hasEffect('global', 'fertozes')) { valueModifier *= GAME_CONFIG.CATCH_VALUE.INFECTION; details.push(`Fertőzés: ${GAME_CONFIG.CATCH_VALUE.INFECTION}x`); }
@@ -1260,7 +1246,7 @@ const marketCards = [
         return { total: fishCaught * valueModifier, modifier: valueModifier, details };
     }
 
-    function updatePlayerReputation(player, fishCaught, fairShare){
+    function updatePlayerReputation(player, fishCaught, fairShare) {
         if (!player.isBankrupt) {
             if (fishCaught > fairShare * GAME_CONFIG.REPUTATION.OVERFISHING_THRESHOLD && fairShare > 0) player.reputation -= GAME_CONFIG.REPUTATION.CHANGE_VALUE;
             if (fishCaught < fairShare * GAME_CONFIG.REPUTATION.UNDERFISHING_THRESHOLD) player.reputation += GAME_CONFIG.REPUTATION.CHANGE_VALUE;
@@ -1268,7 +1254,7 @@ const marketCards = [
         }
     }
     
-    function processPlayerAdjustments(player){
+    function processPlayerAdjustments(player) {
         if (!player.adjustments || player.adjustments.length === 0) {
             return { total: 0, details: '' };
         }
@@ -1278,7 +1264,7 @@ const marketCards = [
         return { total, details };
     }
 
-    function calculatePlayerCost(player){
+    function calculatePlayerCost(player) {
         const costDetails = []; let totalCost = 0;
         const season = getCurrentSeason(gameState.round);
         if (hasEffect(player.id, 'kiralyi_kedvezmeny')) { costDetails.push('Királyi Kedvezmény: mentesség'); return {totalCost: 0, costDetails}; }
@@ -1312,7 +1298,7 @@ const marketCards = [
         if (hasEffect(player.id, 'beteg_halasz') || hasEffect(player.id, 'trening_koltseg')) { totalCost = gameState.fixedCost; costDetails.splice(0, costDetails.length, `Betegség/Tréning alapdíj: ${totalCost}`); }
         return { totalCost, costDetails };
     }
-function createAuditEntry({player, action, wealthStart, reputationStart, income, costs, adjustments, fairShare, wealthEnd, mff, totalCatch}){
+function createAuditEntry({player, action, wealthStart, reputationStart, income, costs, adjustments, fairShare, wealthEnd, mff, totalCatch}) {
         const entry = {
             round: gameState.round,
             roundData: { pondStart: gameState.history.pond[gameState.history.pond.length-1], mff, totalCatch },
@@ -1330,10 +1316,10 @@ function createAuditEntry({player, action, wealthStart, reputationStart, income,
         gameState.auditLog.push(entry);
     }
 
-    function checkPlayerBankruptcy(player){ if (!player.isBankrupt && player.fish < 0) { alert(`${player.name} csődbe ment!`); player.isBankrupt = true; player.fish = 0; logEvent(`${player.name} csődbe ment.`); } }
-    function applyPondRegeneration(regenRate){ gameState.pond = Math.min(gameState.maxPond, gameState.pond * regenRate); gameState.history.pond.push(gameState.pond); }
+    function checkPlayerBankruptcy(player) { if (!player.isBankrupt && player.fish < 0) { alert(`${player.name} csődbe ment!`); player.isBankrupt = true; player.fish = 0; logEvent(`${player.name} csődbe ment.`); } }
+    function applyPondRegeneration(regenRate) { gameState.pond = Math.min(gameState.maxPond, gameState.pond * regenRate); gameState.history.pond.push(gameState.pond); }
 
-    function prepareNextRound(){
+    function prepareNextRound() {
         gameState.round++;
         setupPlayerInputs();
         document.querySelectorAll('.player-catch-input').forEach(input => input.classList.remove('bankruptcy-warning'));
@@ -1345,8 +1331,8 @@ function createAuditEntry({player, action, wealthStart, reputationStart, income,
         updateAllUI();
     }
     
-    function undoLastRound(){ if (undoStack.length === 0) return; gameState = undoStack.pop(); logEvent("--- UTOLSÓ NAP VISSZAVONVA ---", { isDetail: true }); setupPlayerInputs(); updateAllUI(); updateUndoButton(); }
-    function updateUndoButton(){ dom.undoBtn.disabled = undoStack.length === 0; }
+    function undoLastRound() { if (undoStack.length === 0) return; gameState = undoStack.pop(); logEvent("--- UTOLSÓ NAP VISSZAVONVA ---", { isDetail: true }); setupPlayerInputs(); updateAllUI(); updateUndoButton(); }
+    function updateUndoButton() { dom.undoBtn.disabled = undoStack.length === 0; }
 
     function updateAnalyticsPanels(){
       dom.sustainabilityTableBody.innerHTML=''; if(!gameState.history) return;
@@ -1358,7 +1344,7 @@ function createAuditEntry({player, action, wealthStart, reputationStart, income,
     }
 
     // === v8.9 ÚJ FUNKCIÓ ===
-    function renderDebriefingTable(){
+    function renderDebriefingTable() {
         if (!dom.debriefTableBody || !gameState.players) return;
 
         let bodyHtml = '';
@@ -1430,7 +1416,7 @@ function createAuditEntry({player, action, wealthStart, reputationStart, income,
     // === v8.9 VÉGE ===
 
     // === v8.10 ÚJ FUNKCIÓK START ===
-    function populateDivinePlayerSelector(){
+    function populateDivinePlayerSelector() {
         if (!dom.divinePlayerSelector || !gameState.players) return;
         dom.divinePlayerSelector.innerHTML = '';
         gameState.players.forEach(p => {
@@ -1459,7 +1445,7 @@ function createAuditEntry({player, action, wealthStart, reputationStart, income,
         });
     }
 
-    function getDivineTargets(){
+    function getDivineTargets() {
         const selectedPlayers = Array.from(document.querySelectorAll('.divine-target-player:checked')).map(cb => parseInt(cb.value));
         
         if (selectedPlayers.length > 0) {
@@ -1472,7 +1458,7 @@ function createAuditEntry({player, action, wealthStart, reputationStart, income,
     }
     // === v8.10 ÚJ FUNKCIÓK VÉGE ===
 
-    function getPondHealthStatusText(health){
+    function getPondHealthStatusText(health) {
         if (health > 80) return "Kiváló";
         if (health > 50) return "Stabil";
         if (health > 25) return "Sérülékeny";
@@ -1539,7 +1525,7 @@ function updateDisplay(s){
       }
     }
     
-    function updateStatCardHighlights(){
+    function updateStatCardHighlights() {
       const effectMap = {
         'decree': dom.fixedCostCard, 'divine_tax': dom.fixedCostCard, 'kiralyi_ado': dom.fixedCostCard,
         'csaladi_ugyek_effect': dom.fixedCostCard,
@@ -1558,7 +1544,7 @@ function updateDisplay(s){
       }
     }
 
-    function generateDailyAnalysis(){
+    function generateDailyAnalysis() {
         const { players, history, round } = gameState;
         const activePlayers = players.filter(p => !p.isBankrupt);
         if (activePlayers.length < 2) return "A közösség sorsa egyetlen halász kezében van.";
@@ -1606,7 +1592,7 @@ function updateDisplay(s){
     }
 
 
-    function getAdvisorSuggestions(){
+    function getAdvisorSuggestions() {
         const suggestions = [];
         const { pondHealth, players, round, pollutedWater } = gameState;
         
@@ -1695,7 +1681,7 @@ function updateDisplay(s){
         return suggestions;
     }
 
-    function updateAdvisorPanel(){
+    function updateAdvisorPanel() {
         dom.eventAdvisorPanel.innerHTML = '';
         const suggestions = getAdvisorSuggestions();
         let content = `<h3 class="text-sm font-semibold mb-2" style="color:var(--muted)">Eseménytanácsadó</h3>`;
@@ -1723,7 +1709,7 @@ function updateDisplay(s){
         dom.eventAdvisorPanel.innerHTML = content;
     }
     
-    function renderActiveEffectsPanel(){
+    function renderActiveEffectsPanel() {
         const allEffects = [...gameState.effectHistory].sort((a,b) => b.roundTriggered - b.roundTriggered);
 
         if (allEffects.length === 0 && !gameState.pollutedWater.enabled) {
@@ -1789,7 +1775,7 @@ function updateDisplay(s){
                 statusText = daysAgo === 0 ? `(Ezen a napon)` : `(${daysAgo} nappal ezelőtt)`;
             }
             
-            const targets = (effect.targets && effect.targets.length > 0) ? (effect.targets.includes('global') ? 'Mindenki' : effect.targets.map(id => gameState.players.find(p=>p.id===(id) && id).name)).join(', ')) : '';
+            const targets = (effect.targets && effect.targets.length > 0) ? (effect.targets.includes('global') ? 'Mindenki' : effect.targets.map(id => gameState.players.find(p=>p.id===id)?.name).join(', ')) : '';
             const outcomeHTML = status === 'expired' && effect.outcome ? `<p class="outcome">Eredmény: ${effect.outcome}</p>` : '';
             const detailsHTML = (effect.details && effect.details.length > 0) ? `<div class="details"><strong>Részletek:</strong><ul class="list-disc list-inside ml-1">${effect.details.map(d => `<li>${d}</li>`).join('')}</ul></div>` : '';
             
@@ -1840,7 +1826,7 @@ function updateDisplay(s){
         `;
     }
 
-    function populateAuditLogFilter(){
+    function populateAuditLogFilter() {
         dom.auditLogPlayerFilter.innerHTML = '<option value="all">Mindenki</option>';
         gameState.players.forEach(p => {
             const opt = document.createElement('option');
@@ -1850,7 +1836,7 @@ function updateDisplay(s){
         });
     }
 
-    function renderAuditLog(){
+    function renderAuditLog() {
         populateAuditLogFilter();
         const filter = dom.auditLogPlayerFilter.value;
         const groupingMode = document.querySelector('input[name="audit-grouping"]:checked').value;
@@ -1903,7 +1889,7 @@ function updateDisplay(s){
         dom.auditLogTableContainer.innerHTML = tableHTML;
     }
 
-    function renderAuditLogRow(entry, mode){
+    function renderAuditLogRow(entry, mode) {
         const catchColor = entry.catch.actual > entry.fairShare ? 'var(--c-red)' : '#227a66';
         const repChangeText = entry.reputationChange > 0 ? `+${entry.reputationChange}` : entry.reputationChange;
         const repColor = entry.reputationChange < 0 ? 'var(--c-red)' : (entry.reputationChange > 0 ? '#227a66' : 'var(--muted)');
@@ -1959,7 +1945,7 @@ function updateDisplay(s){
     }
     
     function updateFixedCost(v){ const n=parseInt(v); if(!isNaN(n)&&n>=0){ gameState.fixedCost=n; dom.fixedCostDisplay.textContent=n; logEvent(`A fix költség manuálisan ${n}-ra lett állítva.`); } }
-    function resetGame(){ if(confirm('Biztosan új játékot szeretne indítani? Minden jelenlegi adat elvész.')) { dom.gameScreen.classList.add('hidden'); dom.setupScreen.classList.remove('hidden'); dom.playerCountInput.value = 4; dom.pondStatusDisplay.textContent = '100'; dom.bankStatusDisplay.textContent = '0'; dom.fixedCostDisplay.textContent = '0'; dom.sustainableCatchDisplay.textContent = '0'; dom.maxGrowthCatchDisplay.textContent = '0'; dom.sustainabilityTableBody.innerHTML = ''; dom.totalWealthNumber.textContent = '0'; dom.playerInputsContainer.innerHTML = ''; [playerWealthChart, pondHistoryChart, playerWealthHistoryChart, catchHistoryChart].forEach(ch=>{ try{ (ch && ch.destroy)(); }catch(e){} }); gameState = {}; undoStack = []; updateUndoButton(); renderLog(); } }
+    function resetGame(){ if(confirm('Biztosan új játékot szeretne indítani? Minden jelenlegi adat elvész.')) { dom.gameScreen.classList.add('hidden'); dom.setupScreen.classList.remove('hidden'); dom.playerCountInput.value = 4; dom.pondStatusDisplay.textContent = '100'; dom.bankStatusDisplay.textContent = '0'; dom.fixedCostDisplay.textContent = '0'; dom.sustainableCatchDisplay.textContent = '0'; dom.maxGrowthCatchDisplay.textContent = '0'; dom.sustainabilityTableBody.innerHTML = ''; dom.totalWealthNumber.textContent = '0'; dom.playerInputsContainer.innerHTML = ''; [playerWealthChart, pondHistoryChart, playerWealthHistoryChart, catchHistoryChart].forEach(ch=>{ try{ ch?.destroy(); }catch(e){} }); gameState = {}; undoStack = []; updateUndoButton(); renderLog(); } }
     const STORAGE_KEY = 'pdfSections_v2';
     function loadPdfSectionPrefs(){ const raw = localStorage.getItem(STORAGE_KEY); const inputs = document.querySelectorAll('input[name="pdf-sections"]'); if(!raw) return; try{ const arr=JSON.parse(raw); const set=new Set(arr); inputs.forEach(i=> i.checked=set.has(i.value)); }catch(e){} }
     function savePdfSectionPrefs(){ const picks = Array.from(document.querySelectorAll('input[name="pdf-sections"]:checked')).map(i=>i.value); localStorage.setItem(STORAGE_KEY, JSON.stringify(picks)); }
@@ -1983,10 +1969,10 @@ function updateDisplay(s){
         [playerWealthChart, pondHistoryChart, playerWealthHistoryChart, catchHistoryChart].filter(Boolean).forEach(ch=>{ try{ ch.resize(); ch.update('none'); }catch(e){} });
         await new Promise(r=>setTimeout(r,50));
         
-        const isLogExport = document.querySelector('input[name="pdf-sections"][value="#log-panel"]'() && ).checked); let tempLogPanel = null;
+        const isLogExport = document.querySelector('input[name="pdf-sections"][value="#log-panel"]')?.checked; let tempLogPanel = null;
         if (isLogExport) { tempLogPanel = document.createElement('div'); tempLogPanel.id = "log-panel-printable"; tempLogPanel.className = 'p-4 bg-white'; tempLogPanel.innerHTML = `<h3 class="text-lg font-bold mb-4">Játéknapló</h3>` + document.getElementById('log-content').innerHTML; document.body.appendChild(tempLogPanel); }
         
-        const isAuditExport = document.querySelector('input[name="pdf-sections"][value="#audit-log-modal-content"]'() && ).checked);
+        const isAuditExport = document.querySelector('input[name="pdf-sections"][value="#audit-log-modal-content"]')?.checked;
         if (isAuditExport) { dom.auditLogModalContent.style.transform = 'none'; dom.auditLogModalContent.style.transition = 'none'; dom.auditLogTableContainer.style.maxHeight = 'none'; }
         
         const sustainScroll = document.querySelector('#sustainability-container .sustainability-table-container'); const oldMaxH = sustainScroll ? sustainScroll.style.maxHeight : null; const oldOverflow = sustainScroll ? sustainScroll.style.overflowY : null;
@@ -2013,7 +1999,7 @@ function updateDisplay(s){
             pdf.addImage(canvas.toDataURL('image/png'), 'PNG', margin, margin, contentW, scaledH);
         }
 
-        if (sustainScroll)(({ sustainScroll.style.maxHeight = oldMaxH) != null ? ({ sustainScroll.style.maxHeight = oldMaxH) : (''));((sustainScroll.style.overflowY = oldOverflow) != null ? (sustainScroll.style.overflowY = oldOverflow) : ('')); }
+        if (sustainScroll) { sustainScroll.style.maxHeight = oldMaxH ?? ''; sustainScroll.style.overflowY = oldOverflow ?? ''; }
         if (isAuditExport) { dom.auditLogModalContent.style.transform = ''; dom.auditLogModalContent.style.transition = ''; dom.auditLogTableContainer.style.maxHeight = ''; }
         if (tempLogPanel) document.body.removeChild(tempLogPanel);
         if (!wasAnalysisBayOpen) analysisBay.open = false;
@@ -2035,29 +2021,29 @@ function updateDisplay(s){
     }
     function getBlocksToExport(){ const picks = Array.from(document.querySelectorAll('input[name="pdf-sections"]:checked')).map(i=>i.value); const defaultSelectors = ['#chart1-container','#sustainability-container','#chart3-container','#chart4-container']; const selectors = (picks.length ? picks : defaultSelectors); const list=[]; selectors.forEach(sel=>{ let el = document.querySelector(sel); if (sel === '#log-panel' && document.querySelector('#log-panel-printable')) el = document.querySelector('#log-panel-printable'); if(el) list.push(el); }); return list; }
     const logToggleBtn = document.getElementById('log-toggle-btn'), logPanel = document.getElementById('log-panel'), logCloseBtn = document.getElementById('log-close-btn'), logContent = document.getElementById('log-content');
-    function logEvent(text, options){ if (!gameState.log) gameState.log = []; const timestamp = new Date().toLocaleTimeString('hu-HU', { hour: '2-digit', minute: '2-digit' }); gameState.log.push({ text, timestamp, flagged: false, notes: '', isDetail: options.isDetail || false }); renderLog(); }
-    function renderLog(){ if (!logContent) return; const logHtml = (gameState.log || []).map((entry, index) => `<div class="log-entry text-sm p-2 rounded-lg ${entry.flagged ? 'border-l-4 border-amber-400' : ''} ${entry.isDetail ? 'log-entry-detail':''}" style="background: rgba(20,35,60,0.05);" data-log-round="${Math.ceil((index+1)/gameState.players.length)}"><div class="flex justify-between items-start"><div><span class="font-mono text-xs opacity-60">${entry.timestamp}</span><p class="leading-tight">${entry.text}</p></div><button class="log-flag-btn p-1 opacity-50 hover:opacity-100 ${entry.flagged ? 'opacity-100' : ''}" data-index="${index}" title="Fontos esemény megjelölése"><svg class="w-4 h-4" fill="${entry.flagged ? 'var(--c-gold)' : 'currentColor'}" viewBox="0 0 20 20"><path d="M3 3a1 1 0 00-1 1v12a1 1 0 001 1h1a1 1 0 001-1V4a1 1 0 00-1-1H3zm3.707 1.293a1 1 0 00-1.414 0l-2 2a1 1 0 000 1.414l2 2a1 1 0 001.414-1.414L5.414 7H16a1 1 0 100-2H5.414l1.293-1.293a1 1 0 000-1.414z"></path></svg></button></div>${entry.flagged ? `<textarea class="log-entry-note w-full mt-2 p-1.5 rounded" data-index="${index}" placeholder="Jegyzet...">${entry.notes}</textarea>` : ''}</div>`).reverse().join(''); logContent.innerHTML = logHtml || '<p class="text-xs text-center p-4" style="color:var(--muted)">A napló üres.</p>'; logContent.scrollTop = 0; }
+    function logEvent(text, options = {}) { if (!gameState.log) gameState.log = []; const timestamp = new Date().toLocaleTimeString('hu-HU', { hour: '2-digit', minute: '2-digit' }); gameState.log.push({ text, timestamp, flagged: false, notes: '', isDetail: options.isDetail || false }); renderLog(); }
+    function renderLog() { if (!logContent) return; const logHtml = (gameState.log || []).map((entry, index) => `<div class="log-entry text-sm p-2 rounded-lg ${entry.flagged ? 'border-l-4 border-amber-400' : ''} ${entry.isDetail ? 'log-entry-detail':''}" style="background: rgba(20,35,60,0.05);" data-log-round="${Math.ceil((index+1)/gameState.players.length)}"><div class="flex justify-between items-start"><div><span class="font-mono text-xs opacity-60">${entry.timestamp}</span><p class="leading-tight">${entry.text}</p></div><button class="log-flag-btn p-1 opacity-50 hover:opacity-100 ${entry.flagged ? 'opacity-100' : ''}" data-index="${index}" title="Fontos esemény megjelölése"><svg class="w-4 h-4" fill="${entry.flagged ? 'var(--c-gold)' : 'currentColor'}" viewBox="0 0 20 20"><path d="M3 3a1 1 0 00-1 1v12a1 1 0 001 1h1a1 1 0 001-1V4a1 1 0 00-1-1H3zm3.707 1.293a1 1 0 00-1.414 0l-2 2a1 1 0 000 1.414l2 2a1 1 0 001.414-1.414L5.414 7H16a1 1 0 100-2H5.414l1.293-1.293a1 1 0 000-1.414z"></path></svg></button></div>${entry.flagged ? `<textarea class="log-entry-note w-full mt-2 p-1.5 rounded" data-index="${index}" placeholder="Jegyzet...">${entry.notes}</textarea>` : ''}</div>`).reverse().join(''); logContent.innerHTML = logHtml || '<p class="text-xs text-center p-4" style="color:var(--muted)">A napló üres.</p>'; logContent.scrollTop = 0; }
     logToggleBtn.addEventListener('click', () => logPanel.classList.toggle('open')); logCloseBtn.addEventListener('click', () => logPanel.classList.remove('open'));
     logContent.addEventListener('click', (e) => { const btn = e.target.closest('.log-flag-btn'); if (btn) { const index = parseInt(btn.dataset.index); gameState.log[index].flagged = !gameState.log[index].flagged; renderLog(); } });
     logContent.addEventListener('input', (e) => { const textarea = e.target.closest('.log-entry-note'); if (textarea) { const index = parseInt(textarea.dataset.index); gameState.log[index].notes = textarea.value; } });
     const timerDisplay = document.getElementById('timer-display'), timerSelect = document.getElementById('timer-select'), timerMute = document.getElementById('timer-mute'), timerStartBtn = document.getElementById('timer-start-btn'), timerResetBtn = document.getElementById('timer-reset-btn'); let timerInterval = null, timeLeft = parseInt(timerSelect.value); const timerSound = new Audio('data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU'+Array(300).join('123'));
-    function updateTimerDisplay(){ const minutes = String(Math.floor(timeLeft / 60)).padStart(2, '0'); const seconds = String(timeLeft % 60).padStart(2, '0'); timerDisplay.textContent = `${minutes}:${seconds}`; }
-    function startTimer(){ if (timerInterval) return; timerStartBtn.textContent = "Szünet"; timerInterval = setInterval(() => { timeLeft--; updateTimerDisplay(); if (timeLeft <= 0) { clearInterval(timerInterval); timerInterval = null; if (!timerMute.checked) timerSound.play(); alert("Lejárt az idő!"); timerStartBtn.textContent = "Start"; } }, 1000); }
-    function pauseTimer(){ clearInterval(timerInterval); timerInterval = null; timerStartBtn.textContent = "Start"; } function resetTimer(){ pauseTimer(); timeLeft = parseInt(timerSelect.value); updateTimerDisplay(); }
+    function updateTimerDisplay() { const minutes = String(Math.floor(timeLeft / 60)).padStart(2, '0'); const seconds = String(timeLeft % 60).padStart(2, '0'); timerDisplay.textContent = `${minutes}:${seconds}`; }
+    function startTimer() { if (timerInterval) return; timerStartBtn.textContent = "Szünet"; timerInterval = setInterval(() => { timeLeft--; updateTimerDisplay(); if (timeLeft <= 0) { clearInterval(timerInterval); timerInterval = null; if (!timerMute.checked) timerSound.play(); alert("Lejárt az idő!"); timerStartBtn.textContent = "Start"; } }, 1000); }
+    function pauseTimer() { clearInterval(timerInterval); timerInterval = null; timerStartBtn.textContent = "Start"; } function resetTimer() { pauseTimer(); timeLeft = parseInt(timerSelect.value); updateTimerDisplay(); }
     timerStartBtn.addEventListener('click', () => timerInterval ? pauseTimer() : startTimer()); timerResetBtn.addEventListener('click', resetTimer); timerSelect.addEventListener('change', resetTimer);
     document.addEventListener('DOMContentLoaded', () => {
       const key='theme', root = document.documentElement, saved = localStorage.getItem(key);
       if(saved ? saved==='dark' : window.matchMedia('(prefers-color-scheme: dark)').matches) root.classList.add('dark');
       const btn = document.getElementById('theme-toggle'), icon = document.getElementById('theme-icon');
       function setIcon(){ icon.innerHTML = root.classList.contains('dark') ? '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z"/>' : '<path d="M12 18a6 6 0 1 0 0-12 6 6 0 0 0 0 12Z M12 2v2M12 20v2M4 12H2M22 12h-2M5 5l-1.5-1.5M20.5 20.5 19 19M19 5l1.5-1.5M5 19 3.5 20.5"/>'; }
-      setIcon(); (btn && btn.addEventListener)('click', ()=>{ root.classList.toggle('dark'); localStorage.setItem(key, root.classList.contains('dark')?'dark':'light'); setIcon(); applyChartTheme(); [playerWealthChart, pondHistoryChart, playerWealthHistoryChart, catchHistoryChart].forEach(ch=>(ch && ch.update)('none')); });
+      setIcon(); btn?.addEventListener('click', ()=>{ root.classList.toggle('dark'); localStorage.setItem(key, root.classList.contains('dark')?'dark':'light'); setIcon(); applyChartTheme(); [playerWealthChart, pondHistoryChart, playerWealthHistoryChart, catchHistoryChart].forEach(ch=>ch?.update('none')); });
       
       // Fő eseménykezelők
       dom.startGameBtn.addEventListener('click', initGame); dom.endGameBtn.addEventListener('click', endRound); dom.newGameBtn.addEventListener('click', resetGame); dom.undoBtn.addEventListener('click', undoLastRound); dom.exportPdfBtn.addEventListener('click', exportToPDF, { passive:true });
       dom.demoFillBtn.addEventListener('click', ()=>{ if (dom.gameScreen.classList.contains('hidden')) initGame(); for(let k=0;k<6;k++){ gameState.players.forEach(p=>{ if(!p.isBankrupt) { const max = Math.max(0, Math.floor(gameState.pond / gameState.players.length * 0.8)); const val = Math.max(0, Math.min(8, Math.floor(Math.random() * (max+1)))); const inp = document.getElementById(`player-${p.id}-catch`); if (inp && !inp.disabled) inp.value = val; } }); endRound(); } });
       
       // Fix költség szerkesztése
-      dom.fixedCostCard.addEventListener('click', ()((=>{ const curr = gameState.fixedCost) != null ? (=>{ const curr = gameState.fixedCost) : (0)); dom.fixedCostDisplayContainer.innerHTML = `<input type="number" id="inline-fixed-cost-edit" value="${curr}" class="font-black number-display w-full text-center rounded-xl border p-1" style="color:var(--text); background: rgba(225,234,204,.5); border-color: var(--c-turq);">`; const input = document.getElementById('inline-fixed-cost-edit'); input.focus(); input.select(); const save = ()=>{ updateFixedCost(input.value); dom.fixedCostDisplayContainer.innerHTML = `<p id="fixed-cost-display" class="font-black number-display mt-1" style="color:var(--text)">${gameState.fixedCost}</p>`; }; input.addEventListener('blur', save); input.addEventListener('keydown', e=>{ if(e.key==='Enter') input.blur(); }); });
+      dom.fixedCostCard.addEventListener('click', ()=>{ const curr = gameState.fixedCost ?? 0; dom.fixedCostDisplayContainer.innerHTML = `<input type="number" id="inline-fixed-cost-edit" value="${curr}" class="font-black number-display w-full text-center rounded-xl border p-1" style="color:var(--text); background: rgba(225,234,204,.5); border-color: var(--c-turq);">`; const input = document.getElementById('inline-fixed-cost-edit'); input.focus(); input.select(); const save = ()=>{ updateFixedCost(input.value); dom.fixedCostDisplayContainer.innerHTML = `<p id="fixed-cost-display" class="font-black number-display mt-1" style="color:var(--text)">${gameState.fixedCost}</p>`; }; input.addEventListener('blur', save); input.addEventListener('keydown', e=>{ if(e.key==='Enter') input.blur(); }); });
       
       // Név és Vagyon eseménykezelők
       dom.playerInputsContainer.addEventListener('click', e => {
@@ -2255,357 +2241,5 @@ function updateDisplay(s){
 <p class="text-xs text-center text-slate-400 dark:text-slate-500 mt-8 pb-4">
     Készítette: Budai Máté, 2025, mate.budai@gmail.com. Minden jog fenntartva! Hajrá, Fradi!
   </p>
-
-  <!-- === Online Sync Overlay (no game-logic changes) BEGIN === -->
-  <style>
-    #olHostTools { position: fixed; right: 12px; bottom: 12px; z-index: 9999; }
-    #olHostTools .panel { background: #fff; color:#111; border: 1px solid #ddd; border-radius: 12px; padding: 10px; box-shadow: 0 10px 30px rgba(0,0,0,.15); width: 320px;}
-    #olHostTools h4 { margin: 0 0 6px 0; }
-    #olHostTools .small { font-size: 12px; color: #666; }
-    #olMapList { max-height: 180px; overflow: auto; font-size: 12px; margin-top: 6px; }
-    #olMapList select { width: 100%; margin-top: 4px; }
-    #olQrModal { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); align-items:center; justify-content:center; z-index: 99999;}
-    #olQrModal .inner { background:#fff; color:#111; padding:16px; border-radius:12px; width:min(92vw,420px); }
-    #olPlayerView { display:none; max-width:480px; margin: 0 auto; padding: 16px; }
-    #olPlayerView .card { border:1px solid #ddd; border-radius:12px; padding:12px; margin-bottom:12px; background:#fff; color:#111;}
-    .ol-row { display:flex; gap:8px; align-items:center; }
-    .ol-row input[type=number]{ flex:1; padding:8px; border:1px solid #ccc; border-radius:8px; }
-    .ol-row button { padding:8px 12px; border:none; border-radius:8px; background:#111; color:#fff; cursor:pointer; }
-    .ol-badges { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
-    .ol-badge { background:#f5f5f5; border-radius:10px; padding:8px; text-align:center; }
-    .ol-badge .k { display:block; font-size:12px; color:#666; }
-    .ol-badge .v { display:block; font-size:18px; font-weight:700; }
-  </style>
-
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
-
-  <script type="module">
-    // URL role and room
-    const u = new URL(location.href);
-    const role = u.searchParams.get('role'); // host|player
-    let room = u.searchParams.get('room');
-
-    // DOM helpers
-    const $ = sel => document.querySelector(sel);
-    const $$ = sel => Array.from(document.querySelectorAll(sel));
-
-    // PLAYER VIEW (mobile)
-    const pView = document.createElement('section');
-    pView.id = 'olPlayerView';
-    pView.innerHTML = `
-      <div class="card">
-        <div style="font-weight:700; margin-bottom:6px">Csatlakozás</div>
-        <div class="ol-row" style="margin-bottom:6px">
-          <input id="olPlayerName" placeholder="Neved">
-          <button id="olJoin">Belépés</button>
-        </div>
-        <div id="olJoinMsg" class="small"></div>
-      </div>
-      <div class="card">
-        <div style="font-weight:700; margin-bottom:6px">Állapot</div>
-        <div class="ol-badges">
-          <div class="ol-badge"><span class="k">Tó</span><span id="olLake" class="v">-</span></div>
-          <div class="ol-badge"><span class="k">Vagyon</span><span id="olWallet" class="v">-</span></div>
-          <div class="ol-badge"><span class="k">Előző fogás</span><span id="olLast" class="v">-</span></div>
-          <div class="ol-badge"><span class="k">Aktív hatás</span><span id="olEffect" class="v">-</span></div>
-        </div>
-      </div>
-      <div class="card">
-        <div style="font-weight:700; margin-bottom:6px">Aktuális kör beküldése</div>
-        <div class="ol-row">
-          <input id="olIntent" type="number" min="0" step="1" placeholder="Hány halat fogsz?">
-          <button id="olSend">Küldés</button>
-        </div>
-        <div id="olSendMsg" class="small"></div>
-      </div>
-    `;
-    document.body.appendChild(pView);
-
-    // HOST TOOLS (floating)
-    const hTools = document.createElement('div');
-    hTools.id = 'olHostTools';
-    hTools.innerHTML = `
-      <div class="panel">
-        <h4>Online játék</h4>
-        <div class="small">Szoba: <span id="olRoomLbl">-</span></div>
-        <div class="ol-row" style="margin:8px 0">
-          <button id="olQrBtn">QR</button>
-          <button id="olSyncNow">Kényszerített szinkron</button>
-        </div>
-        <div class="small" style="margin-top:6px">Játékos-hozzárendelés</div>
-        <div id="olMapList"></div>
-      </div>`;
-    document.body.appendChild(hTools);
-
-    // QR MODAL
-    const qrModal = document.createElement('div');
-    qrModal.id = 'olQrModal';
-    qrModal.innerHTML = `
-      <div class="inner">
-        <h3 style="margin:0 0 8px 0">Csatlakozás QR-kóddal</h3>
-        <div id="olQrBox" style="display:flex;justify-content:center;margin:12px 0"></div>
-        <div class="small" id="olJoinLink" style="word-break:break-all"></div>
-        <div class="ol-row" style="margin-top:8px">
-          <button id="olQrClose">Bezár</button>
-          <button id="olCopy">Link másolása</button>
-        </div>
-      </div>`;
-    document.body.appendChild(qrModal);
-
-    // ROLE GATING
-    function showPlayerOnly(){
-      // hide original dashboard for player role
-      const kids = Array.from(document.body.children);
-      for (const el of kids) {
-        if (el.id === 'olPlayerView' || el.id === 'olQrModal') continue;
-        el.style.display = 'none';
-      }
-      $('#olPlayerView').style.display = 'block';
-    }
-    function showHostOnly(){
-      $('#olHostTools').style.display = 'block';
-    }
-
-    // Firebase (modular)
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-    import { 
-      getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot, collection, query, where, getDocs, addDoc,
-      serverTimestamp, writeBatch 
-    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
-    // TODO: Töltsd ki a saját Firebase configgal
-    const firebaseConfig = {
-  apiKey: "AIzaSyBUifQpABjjbrIdI5pZaY3gys5N5W5wopw",
-  authDomain: "fishpond-238c3.firebaseapp.com",
-  projectId: "fishpond-238c3",
-  storageBucket: "fishpond-238c3.firebasestorage.app",
-  messagingSenderId: "334427651378",
-  appId: "1:334427651378:web:5bf16ef09f54fe4cb1ab2b"
-};
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
-
-    // Paths
-    const S = (id) => doc(db, "sessions", id);
-    const P = (id) => collection(db, "sessions", id, "players");
-    const R = (id, r) => doc(db, "sessions", id, "rounds", String(r));
-    const C = (id, r) => collection(db, "sessions", id, "rounds", String(r), "catches");
-    const CD = (id, r, pid) => doc(db, "sessions", id, "rounds", String(r), "catches", pid);
-
-    // State
-    let uid=null, playerId=null, currentRound=1;
-    let mapping = {}; // remotePlayerId -> hostPlayerId
-    let hostUid=null;
-
-    // Sign-in and boot
-    signInAnonymously(auth).catch(err => { console.error(err); alert('Bejelentkezési hiba: ' + (err && err.code)); });
-    onAuthStateChanged(auth, function(user){
-      if (!user) return;
-      uid = user.uid;
-      if (role === 'player') {
-        if (!room) { room = prompt('Room azonosító:'); }
-        showPlayerOnly();
-        playerBoot();
-      } else {
-        showHostOnly();
-        hostBoot();
-      }
-    });
-
-    // ---------------- PLAYER ----------------
-    function playerBoot(){
-      // join button
-      $('#olJoin').onclick = joinRoom;
-      $('#olSend').onclick = sendIntent;
-
-      // session listener for lake/round
-      onSnapshot(S(room), (snap) => {
-        const d = snap.data() || {};
-        currentRound = d.round || 1;
-        $('#olLake').textContent = Math.floor((d && d.(lake) && lake).stock)(() != null ? () : (0)));
-      });
-
-      // bind own player doc if exists
-      bindOwnPlayerRealtime();
-    }
-
-    async function joinRoom(){
-      const name = ($('#olPlayerName').value || 'Játékos').trim();
-      const s = await getDoc(S(room));
-      if (!s.exists()) { $('#olJoinMsg').textContent = 'A szoba nem létezik.'; return; }
-      // find by uid
-      const q = query(P(room), where('uid','==',uid));
-      const ex = await getDocs(q);
-      if (ex.size === 0) {
-        const ref = await addDoc(P(room), { name, wallet:0, lastCatch:0, activeEffect:null, joinedAt: serverTimestamp(), uid });
-        playerId = ref.id;
-      } else {
-        playerId = ex.docs[0].id;
-        await updateDoc(doc(db, 'sessions', room, 'players', playerId), { name });
-      }
-      $('#olJoinMsg').textContent = 'Sikeres csatlakozás.';
-      bindOwnPlayerRealtime();
-    }
-
-    async function bindOwnPlayerRealtime(){
-      // wallet/last/effect mirror from session-level published data (host publishes after endRound)
-      onSnapshot(S(room), async (snap) => {
-        const d = snap.data() || {};
-        const my = (d && d.publicPlayers)?[uid];
-        if (my) {
-          $('#olWallet')((.textContent = Math.floor(my.wallet) != null ? (.textContent = Math.floor(my.wallet) : (0)));
-          $('#olLast')((.textContent = Math.floor(my.lastCatch) != null ? (.textContent = Math.floor(my.lastCatch) : (0)));
-          $('#olEffect')((.textContent = my.activeEffect) != null ? (.textContent = my.activeEffect) : ('-'));
-        }
-      });
-    }
-
-    async function sendIntent(){
-      if (!playerId) { $('#olSendMsg').textContent = 'Előbb csatlakozz!'; return; }
-      const s = await getDoc(S(room));
-      const r = Number((s.data() && s.data().round) || 1);
-      const v = Number($('#olIntent').value);
-      if (!(v>=0)) { $('#olSendMsg').textContent = 'Adj meg 0 vagy pozitív számot.'; return; }
-      const myDoc = CD(room, r, playerId);
-      const exists = await getDoc(myDoc);
-      if (exists.exists()) { $('#olSendMsg').textContent = 'Már beküldted ebben a körben.'; return; }
-      await setDoc(myDoc, { intent: v, submittedAt: serverTimestamp(), uid });
-      $('#olSendMsg').textContent = 'Beküldve.';
-      $('#olSend').disabled = true;
-    }
-
-    // ---------------- HOST ----------------
-    async function hostBoot(){
-      if (!room) { room = Math.random().toString(36).slice(2,8); u.searchParams.set('room', room); history.replaceState({}, "", u); }
-      $('#olRoomLbl').textContent = room;
-
-      // create session doc if not exists
-      const sref = S(room);
-      const s = await getDoc(sref);
-      if (!s.exists()) {
-        await setDoc(sref, { code: room, createdAt: serverTimestamp(), status:'lobby', round:1, lake:{ stock: 100, sustainableCatch: 10 }, hostUid: uid });
-      } else if (!s.data().hostUid) {
-        updateDoc(sref, { hostUid: uid });
-      }
-
-      // QR
-      $('#olQrBtn').onclick = () => {
-        const link = buildJoinUrl();
-        $('#olJoinLink').textContent = link;
-        $('#olQrModal').style.display = 'flex';
-        const box = $('#olQrBox'); box.innerHTML = ''; if (!ensureQRCodeReady()) { return; }
-new QRCode(box, { text: link, width: 220, height: 220 });
-      };
-      $('#olQrClose').onclick = () => $('#olQrModal').style.display = 'none';
-      $('#olCopy').onclick = async () => { await navigator.clipboard.writeText(buildJoinUrl()); alert('Link másolva'); };
-
-      // mapping UI and intent listener
-      renderMappingUI();
-      // removed duplicate players onSnapshot to avoid double subscription; handled inside renderMappingUI()
-      bindIntentsToInputs();
-
-      // publish after endRound without changing its logic
-      patchEndRoundPublish();
-      $('#olSyncNow').onclick = publishStateFromDashboard;
-    }
-
-    function buildJoinUrl(){
-  const base = (location.origin + location.pathname)
-    .replace(/index\.html$/,'')
-    .replace(/\/?$/, '/');
-  return `${base}?role=player&room=${encodeURIComponent(room)}`;
-}
-?role=player&room=${encodeURIComponent(room)}`;
-    }
-
-    function renderMappingUI(){
-      if (unsubPlayers) { try { unsubPlayers(); } catch(e){} unsubPlayers = null; }
-const el = $('#olMapList'); el.innerHTML='';
-      // list remote players
-      unsubPlayers = onSnapshot(P(room), (snap) => {
-        el.innerHTML='';
-        const hostPlayers = (window.(gameState && gameState.players) || []).map(p => ({ id:p.id, name:p.name }));
-        snap.forEach(d => {
-          const pl = d.data(); const pid = d.id;
-          const wrap = document.createElement('div');
-          wrap.innerHTML = `<div style="font-weight:600">${pl.name || 'Játékos'}</div>`;
-          const sel = document.createElement('select');
-          sel.innerHTML = `<option value="">— hozzárendelés a helyi játékoshoz —</option>` + hostPlayers.map(hp => `<option value="${hp.id}">${hp.name}</option>`).join('');
-          sel.onchange = () => { mapping[pid] = sel.value; localStorage.setItem('ol_mapping_'+room, JSON.stringify(mapping)); };
-          // restore mapping
-          const saved = JSON.parse(localStorage.getItem('ol_mapping_'+room) || '{}');
-          Object.assign(mapping, saved);
-          if (mapping[pid]) sel.value = mapping[pid];
-          wrap.appendChild(sel);
-          el.appendChild(wrap);
-        });
-      });
-    }
-
-    function bindIntentsToInputs(){
-      if (unsubCatches) { try { unsubCatches(); } catch(e){} unsubCatches = null; }
-// whenever catches for the current round arrive, write them into the corresponding host input fields
-      onSnapshot(S(room), (snap) => { currentRound = (snap.data() && snap.data().round) || 1; });
-      unsubCatches = onSnapshot(collection(db, \'sessions\', room, \'rounds\', String(currentRound), \'catches\'), (snap) => {
-        snap.docChanges().forEach(ch => {
-          const remotePid = ch.doc.id;
-          const hostPid = mapping[remotePid];
-          if (!hostPid) return;
-          const intent = Number(ch.(doc.data() && doc.data().intent) || 0);
-          const input = document.getElementById(`player-${hostPid}-catch`);
-          if (input) {
-            input.value = intent;
-            input.dispatchEvent(new Event('input', { bubbles: true })); // keep existing warnings/logic working
-          }
-        });
-      });
-    }
-
-    function patchEndRoundPublish(){
-      const orig = window.endRound;
-      if (typeof orig !== 'function') return; // safety
-      window.endRound = function patchedEndRound(){
-        const prevRound = window.(gameState && gameState.round);
-        const res = orig.apply(this, arguments);
-        // after original logic completes, publish
-        publishStateFromDashboard(prevRound);
-        return res;
-      };
-    }
-
-    async function publishStateFromDashboard(prevRoundGuess){
-      try {
-        const gs = window.gameState || {};
-        const sref = S(room);
-        const sSnap = await getDoc(sref);
-        const r = gs.round || (sSnap.data() && sSnap.data().round) || 1;
-        // Build public summary for players
-        const pubPlayers = {};
-        for (const p of (gs.players || [])) {
-          // try to find remote uid via reverse mapping (hostPid -> remotePid)
-          const remotePid = Object.keys(mapping).find(k => mapping[k] === p.id);
-          const remote = remotePid ? (await getDoc(doc(db, 'sessions', room, 'players', remotePid))).data() : null;
-          const key = (remote && remote.uid) || ('local_'+p.id);
-          pubPlayers[key] = { wallet: Math.floor(p.fish||0), lastCatch: Math.floor(p.lastCatch||0), activeEffect: (p.effects||[])[(0] && 0].name) || null };
-        }
-        updateDoc(sref, { 
-          lake: { stock: Math.floor(gs.pond || 0), sustainableCatch: Math.floor(gs.mff || 0) || ((sSnap.data() && sSnap.data().(lake) && lake).sustainableCatch)(() != null ? () : (0))) },
-          round: r,
-          publicPlayers: pubPlayers
-        });
-        // ensure intents collection for the next round is being watched
-        } catch(e){ console.error(e); }
-    }
-
-    // Final role gate on first load
-    if (role === 'player') {
-      showPlayerOnly();
-    } else {
-      showHostOnly();
-    }
-  </script>
-  <!-- === Online Sync Overlay END === -->
 </body>
 </html>
