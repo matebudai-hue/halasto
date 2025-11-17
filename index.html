@@ -2352,7 +2352,27 @@ function updateDisplay(s){
       $('#olHostTools').style.display = 'block';
     }
 
-    
+    // Firebase (modular)
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { 
+      getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot, collection, query, where, getDocs, addDoc,
+      serverTimestamp, writeBatch 
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    // TODO: Töltsd ki a saját Firebase configgal
+    const firebaseConfig = {
+  apiKey: "AIzaSyBUifQpABjjbrIdI5pZaY3gys5N5W5wopw",
+  authDomain: "fishpond-238c3.firebaseapp.com",
+  projectId: "fishpond-238c3",
+  storageBucket: "fishpond-238c3.firebasestorage.app",
+  messagingSenderId: "334427651378",
+  appId: "1:334427651378:web:5bf16ef09f54fe4cb1ab2b"
+};
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
     // Paths
     const S = (id) => doc(db, "sessions", id);
     const P = (id) => collection(db, "sessions", id, "players");
