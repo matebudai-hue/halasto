@@ -1,26 +1,20 @@
 <!DOCTYPE html>
+
 <html class="scroll-smooth" lang="hu">
- <head>
-  <meta charset="utf-8"/>
-  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-  <title>
-   Halast&oacute; &ndash; Facilit&aacute;tor Dashboard v8.10 (Pil&oacute;taf&uuml;lke)
-  </title>
-  <script src="https://cdn.tailwindcss.com">
-  </script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js">
-  </script>
-  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js">
-  </script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js">
-  </script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js">
-  </script>
-  <link href="https://fonts.googleapis.com" rel="preconnect"/>
-  <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&amp;display=swap" rel="stylesheet"/>
-  <style>
-   :root{
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Halastó – Facilitátor Dashboard v8.10 (Pilótafülke)</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&amp;display=swap" rel="stylesheet"/>
+<style>
+    :root{
       --c-navy:  #14233C; --c-turq:  #54BFB2; --c-cream: #E1EACC; --c-gold:  #E4C157; --c-red:   #F24F4B; --c-blue: #6366f1;
       --text: #0f172a; --muted: #475569; --card: rgba(255,255,255,0.78); --border: rgba(20,35,60,0.08);
       --bg: linear-gradient(180deg, #ffffff 0%, #F5F7FB 100%);
@@ -288,691 +282,252 @@
     .col-wealth {
       font-weight: 700;
     }
-  </style>
- </head>
- <body>
-  <div class="relative z-10 p-4 sm:p-6 lg:p-8 max-w-screen-2xl mx-auto" id="app">
-   <header class="flex items-center justify-between mb-8">
-    <div class="flex items-center gap-3">
-     <div class="h-10 w-10 rounded-xl shadow-lg flex items-center justify-center" style="background: var(--c-turq); box-shadow: 0 10px 18px rgba(84,191,178,.35);">
-      <svg aria-hidden="true" class="w-6 h-6" style="color:#0b1a2c" viewbox="0 0 24 24">
-       <path d="M5 4h3v16H5zM16 4h3v16h-3zM8 11h8v2H8z" fill="currentColor">
-       </path>
-      </svg>
-     </div>
-     <h1 class="text-3xl md:text-4xl font-black tracking-tight" style="background: linear-gradient(90deg, var(--c-navy), var(--c-turq)); -webkit-background-clip: text; color: transparent;">
-      Halast&oacute; &ndash; Facilit&aacute;tor Dashboard
-     </h1>
-    </div>
-    <div class="flex items-center gap-3">
-     <button class="inline-flex items-center gap-2 px-3 py-2 rounded-lg border bg-white/80 dark:bg-white/10" id="log-toggle-btn" style="border-color: var(--border); color: var(--text);" type="button">
-      <svg class="w-4 h-4 opacity-90" fill="currentColor" viewbox="0 0 24 24">
-       <path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h16v2H4z">
-       </path>
-      </svg>
-      <span class="text-sm font-medium">
-       J&aacute;t&eacute;knapl&oacute;
-      </span>
-     </button>
-     <button class="inline-flex items-center gap-2 px-3 py-2 rounded-lg border bg-white/80 dark:bg-white/10" id="theme-toggle" style="border-color: var(--border); color: var(--text);" type="button">
-      <svg aria-hidden="true" class="w-4 h-4 opacity-90" fill="currentColor" id="theme-icon" viewbox="0 0 24 24">
-       <path d="M12 18a6 6 0 1 0 0-12 6 6 0 0 0 0 12Z M12 2v2M12 20v2M4 12H2M22 12h-2M5 5l-1.5-1.5M20.5 20.5 19 19M19 5l1.5-1.5M5 19 3.5 20.5">
-       </path>
-      </svg>
-      <span class="text-sm font-medium">
-       T&eacute;ma
-      </span>
-     </button>
-    </div>
-   </header>
-   <div class="max-w-xl mx-auto p-6 md:p-8 rounded-2xl card-glass card-hover shadow-md" id="setup-screen">
-    <h2 class="text-2xl font-bold text-center mb-6" style="color:var(--text)">
-     J&aacute;t&eacute;k ind&iacute;t&aacute;sa
-    </h2>
-    <div class="space-y-4">
-     <div>
-      <label class="block text-sm font-medium" for="player-count" style="color:var(--muted)">
-       Hal&aacute;szok sz&aacute;ma (4&ndash;10)
-      </label>
-      <input class="mt-1 block w-full rounded-xl border shadow-sm p-3 focus:outline-none focus:ring-2" id="player-count" max="10" min="4" name="player-count" style="border-color: var(--border); background: rgba(255,255,255,.9); color:var(--text);" type="number" value="4"/>
-     </div>
-     <div class="flex items-center justify-between">
-      <button class="inline-flex items-center gap-2 font-semibold py-3 px-5 rounded-xl shadow-lg transition-transform active:scale-[.98] btn-primary" id="start-game-btn" type="button">
-       <svg aria-hidden="true" class="w-4 h-4" fill="currentColor" viewbox="0 0 24 24">
-        <path d="M8 5v14l11-7z">
-        </path>
-       </svg>
-       &Uacute;j j&aacute;t&eacute;k ind&iacute;t&aacute;sa
-      </button>
-      <button class="inline-flex items-center gap-2 font-medium py-3 px-4 rounded-xl border transition-colors" id="demo-fill-btn" style="border-color: var(--border); color:var(--text); background: rgba(225,234,204,.45);" type="button">
-       <svg aria-hidden="true" class="w-4 h-4" fill="currentColor" viewbox="0 0 24 24">
-        <path d="M3 12h18v2H3zM3 7h12v2H3zM3 17h8v2H3z">
-        </path>
-       </svg>
-       Minta adatok
-      </button>
-     </div>
-    </div>
-   </div>
-   <div class="hidden" id="game-screen">
-    <section class="mb-8" id="cockpit-grid">
-     <div class="p-6 rounded-2xl card-glass card-hover shadow-md">
-      <div class="table-head -mt-6 -mx-6 mb-4 p-3 rounded-t-xl text-center">
-       <h2 class="text-2xl font-bold" id="main-day-indicator" style="color: var(--text)">
-       </h2>
-       <h3 class="text-lg font-medium" id="season-indicator" style="color: var(--muted)">
-       </h3>
-      </div>
-      <div class="p-3 my-4 text-center rounded-2xl card-glass text-sm italic font-medium" id="daily-analysis-display" style="color: var(--text)">
-      </div>
-      <button class="w-full font-semibold py-3 px-4 rounded-xl shadow-md transition-transform active:scale-[.98] mb-4" id="end-round-btn" style="background: var(--c-turq); color:#0b1a2c;" type="button">
-       <span class="inline-flex items-center gap-2">
-       </span>
-      </button>
-      <div class="space-y-3" id="player-inputs">
-      </div>
-     </div>
-     <div class="flex flex-col gap-6">
-      <div class="status-grid">
-       <div class="rounded-2xl card-glass card-hover shadow status-card" id="pond-status-card">
-        <h3 title="Halak a t&oacute;ban">
-         Halak a t&oacute;ban
-        </h3>
-        <p id="pond-status" style="color:var(--text)">
-         100
-        </p>
-       </div>
-       <div class="rounded-2xl card-glass card-hover shadow status-card" id="sustainable-catch-card">
-        <h3 title="Fenntarthat&oacute; fog&aacute;s (stabil)">
-         Fennt. Fog&aacute;s
-        </h3>
-        <p id="sustainable-catch-display" style="color:var(--c-turq)">
-         0
-        </p>
-       </div>
-       <div class="rounded-2xl card-glass card-hover shadow status-card" id="max-growth-catch-card">
-        <h3 title="Max. N&ouml;veked&eacute;s Fog&aacute;s">
-         Max. Fog&aacute;s
-        </h3>
-        <p id="max-growth-catch-display" style="color:var(--c-turq)">
-         0
-        </p>
-       </div>
-       <div class="rounded-2xl card-glass card-hover shadow editable-stat status-card" id="fixed-cost-card">
-        <h3 title="Fix k&ouml;lts&eacute;g">
-         Fix K&ouml;lts&eacute;g
-        </h3>
-        <div id="fixed-cost-display-container">
-         <p id="fixed-cost-display" style="color:var(--text)">
-          0
-         </p>
-        </div>
-       </div>
-       <div class="rounded-2xl card-glass card-hover shadow status-card">
-        <h3 title="T&oacute; Eg&eacute;szs&eacute;ge">
-         T&oacute; Eg&eacute;szs&eacute;ge
-        </h3>
-        <p id="pond-health-display">
-         100%
-        </p>
-        <div class="w-full h-2 rounded-full mt-1 health-bar-bg">
-         <div class="h-full rounded-full" id="pond-health-bar-inner" style="width: 100%;">
-         </div>
-        </div>
-        <p class="pond-health-text" id="pond-health-text" style="color:var(--muted)">
-        </p>
-       </div>
-       <div class="rounded-2xl card-glass card-hover shadow status-card">
-        <h3 title="Bank (Ad&oacute;)">
-         Bank (Ad&oacute;)
-        </h3>
-        <p id="bank-status" style="color:var(--c-gold)">
-         0
-        </p>
-       </div>
-      </div>
-      <details class="admin-details">
-       <summary>
-        📊 Tr&eacute;ning &Ouml;sszes&iacute;t&odblac; (Menet k&ouml;zbeni)
-       </summary>
-       <div class="admin-details-content pt-4 debrief-table-container">
-        <table class="w-full text-sm debrief-table">
-         <thead class="table-head">
-          <tr>
-           <th>
-            Hal&aacute;sz
-           </th>
-           <th>
-            St&aacute;tusz
-           </th>
-           <th>
-            Vagyon
-           </th>
-           <th>
-            &Ouml;sszes Fog&aacute;s (%)
-           </th>
-           <th>
-            T&uacute;lhal&aacute;sz&aacute;s
-           </th>
-           <th>
-            H&iacute;rn&eacute;v +/-
-           </th>
-           <th>
-            &Ouml;sszes K&ouml;lts&eacute;g
-           </th>
-          </tr>
-         </thead>
-         <tbody id="debrief-table-body">
-         </tbody>
-         <tfoot class="table-head font-bold" id="debrief-table-foot">
-         </tfoot>
-        </table>
-       </div>
-      </details>
-      <section class="card-glass rounded-2xl" id="active-effects-section">
-       <h3 class="text-lg font-semibold pt-4 px-4 text-center" style="color:var(--text)">
-        Esem&eacute;nyek
-       </h3>
-       <div class="space-y-3 p-4" id="active-effects-panel">
-       </div>
-      </section>
-      <div class="space-y-4">
-       <details class="admin-details">
-        <summary>
-         Esem&eacute;ny ind&iacute;t&aacute;sa
-        </summary>
-        <div class="admin-details-content pt-4 space-y-4">
-         <div>
-          <h3 class="text-sm font-semibold mb-2" style="color:var(--muted)">
-           Piaci k&ouml;rnyezet
-          </h3>
-          <div class="space-y-3">
-           <select class="block w-full rounded-xl border shadow-sm p-2.5" id="market-card-select" style="border-color: var(--border); background: rgba(255,255,255,.9); color:var(--text);">
-           </select>
-           <button class="w-full font-semibold py-2.5 px-4 rounded-xl shadow-md" id="trigger-market-btn" style="background: var(--c-cream); color:#283142;" type="button">
-            Piac aktiv&aacute;l&aacute;sa
-           </button>
-          </div>
-         </div>
-         <div>
-          <h3 class="text-sm font-semibold mb-2" style="color:var(--muted)">
-           V&aacute;ratlan esem&eacute;ny
-          </h3>
-          <div class="space-y-3">
-           <select class="block w-full rounded-xl border shadow-sm p-2.5" id="chaos-card-select" style="border-color: var(--border); background: rgba(255,255,255,.9); color:var(--text);">
-           </select>
-           <div class="grid grid-cols-1 gap-2">
-            <button class="w-full font-semibold py-2.5 px-2 rounded-xl shadow-md btn-secondary" id="trigger-chaos-btn" type="button">
-             Be&aacute;ll&iacute;t&aacute;s
-            </button>
-           </div>
-          </div>
-         </div>
-        </div>
-       </details>
-       <details class="admin-details">
-        <summary>
-         Adminisztr&aacute;ci&oacute; &eacute;s Be&aacute;ll&iacute;t&aacute;sok
-        </summary>
-        <div class="admin-details-content pt-4 space-y-4">
-         <section id="event-advisor-panel">
-         </section>
-         <div class="grid grid-cols-2 gap-2">
-          <button class="w-full font-semibold py-2.5 px-4 rounded-xl shadow-md" id="show-audit-log-btn" style="background:var(--c-cream); color:#283142;" type="button">
-           Audit Napl&oacute;
-          </button>
-          <button class="w-full font-semibold py-2.5 px-4 rounded-xl shadow-md btn-primary" id="export-pdf-btn" type="button">
-           <span class="inline-flex items-center justify-center gap-2">
-            <svg aria-hidden="true" class="w-4 h-4" fill="currentColor" viewbox="0 0 24 24">
-             <path d="M12 3v12l4-4h-3V3zM5 19h14v2H5z">
-             </path>
-            </svg>
-            PDF
-           </span>
-          </button>
-          <button class="w-full font-semibold py-2.5 px-4 rounded-xl shadow-md text-sm" disabled="" id="undo-btn" style="background:var(--c-cream); color:#283142;" type="button">
-           Visszavon
-          </button>
-          <button class="w-full font-semibold py-2.5 px-4 rounded-xl shadow-md btn-danger" id="new-game-btn" type="button">
-           <span class="inline-flex items-center justify-center gap-2">
-            <svg aria-hidden="true" class="w-4 h-4" fill="currentColor" viewbox="0 0 24 24">
-             <path d="M12 5v14m-7-7h14">
-             </path>
-            </svg>
-            &Uacute;j J&aacute;t&eacute;k
-           </span>
-          </button>
-         </div>
-         <details>
-          <summary class="font-semibold cursor-pointer text-sm" style="color: var(--text);">
-           Id&odblac;z&iacute;t&odblac;
-          </summary>
-          <div class="border-t mt-2 pt-4" style="border-color:var(--border)">
-           <div class="text-4xl font-bold text-center" id="timer-display" style="color:var(--text)">
-            00:00
-           </div>
-           <div class="grid grid-cols-2 gap-2 mt-2 text-sm">
-            <select class="w-full p-1 rounded-lg border" id="timer-select" style="border-color:var(--border); background:rgba(255,255,255,.9)">
-             <option value="60">
-              1 perc
-             </option>
-             <option value="120">
-              2 perc
-             </option>
-             <option selected="" value="180">
-              3 perc
-             </option>
-             <option value="240">
-              4 perc
-             </option>
-             <option value="300">
-              5 perc
-             </option>
-            </select>
-            <label class="flex items-center gap-1.5">
-             <input class="rounded" id="timer-mute" type="checkbox"/>
-             N&eacute;m&iacute;t&aacute;s
-            </label>
-           </div>
-           <div class="grid grid-cols-2 gap-2 mt-2">
-            <button class="w-full text-sm font-semibold py-2 px-2 rounded-lg btn-primary" id="timer-start-btn" type="button">
-             Start
-            </button>
-            <button class="w-full text-sm font-semibold py-2 px-2 rounded-lg" id="timer-reset-btn" style="background:var(--c-cream); color:#283142;" type="button">
-             Reset
-            </button>
-           </div>
-          </div>
-         </details>
-         <details class="admin-details">
-          <summary>
-           📊 Tr&eacute;ning &Ouml;sszes&iacute;t&odblac; (Menet k&ouml;zbeni)
-          </summary>
-          <div class="admin-details-content pt-4 debrief-table-container">
-           <table class="w-full text-sm debrief-table">
-            <thead class="table-head">
-             <tr>
-              <th>
-               Hal&aacute;sz
-              </th>
-              <th>
-               St&aacute;tusz
-              </th>
-              <th>
-               Vagyon
-              </th>
-              <th>
-               &Ouml;sszes Fog&aacute;s (%)
-              </th>
-              <th>
-               T&uacute;lhal&aacute;sz&aacute;s
-              </th>
-              <th>
-               H&iacute;rn&eacute;v +/-
-              </th>
-              <th>
-               &Ouml;sszes K&ouml;lts&eacute;g
-              </th>
-             </tr>
-            </thead>
-           </table>
-          </div>
-         </details>
-         <div class="space-y-4">
-          <details class="admin-details">
-           <summary>
-            Esem&eacute;ny ind&iacute;t&aacute;sa
-           </summary>
-           <div class="admin-details-content pt-4 space-y-4">
-            <div>
-             <div class="space-y-3">
-             </div>
-            </div>
-            <div>
-             <div class="space-y-3">
-              <div class="grid grid-cols-1 gap-2">
-              </div>
-             </div>
-            </div>
-           </div>
-          </details>
-          <details class="admin-details">
-           <summary>
-            Adminisztr&aacute;ci&oacute; &eacute;s Be&aacute;ll&iacute;t&aacute;sok
-           </summary>
-           <div class="admin-details-content pt-4 space-y-4">
-            <div class="grid grid-cols-2 gap-2">
-            </div>
-            <details>
-             <summary class="font-semibold cursor-pointer text-sm" style="color: var(--text);">
-              Id&odblac;z&iacute;t&odblac;
-             </summary>
-             <div class="border-t mt-2 pt-4" style="border-color:var(--border)">
-              <div class="grid grid-cols-2 gap-2 mt-2 text-sm">
-               <label class="flex items-center gap-1.5">
-                N&eacute;m&iacute;t&aacute;s
-               </label>
-              </div>
-              <div class="grid grid-cols-2 gap-2 mt-2">
-              </div>
-             </div>
-            </details>
-            <details>
-             <summary class="font-semibold cursor-pointer text-sm text-amber-600">
-              Isteni Beavatkoz&aacute;s
-             </summary>
-             <div class="mt-4 space-y-4 text-sm p-3 rounded-lg border-t pt-4" style="background: rgba(228, 193, 87, 0.1); border-color:var(--border)">
-              <h4 class="font-medium">
-               C&eacute;lpontok
-              </h4>
-              <label class="flex items-center gap-1.5 text-xs">
-               <input class="rounded" id="divine-target-all" type="checkbox"/>
-               <strong>
-                Mindenki
-               </strong>
-              </label>
-              <div class="grid grid-cols-2 gap-x-4 gap-y-1 text-xs pl-2" id="divine-player-selector">
-              </div>
-              <hr style="border-color:var(--border)"/>
-              <h4 class="font-medium">
-               T&oacute; (Glob&aacute;lis)
-              </h4>
-              <div>
-               <label>
-                Halak a t&oacute;hoz (+/-)
-               </label>
-               <div class="flex gap-2 mt-1">
-                <input class="w-full p-2 border rounded-lg" id="divine-fish-amount" placeholder="pl. 50 vagy -20" type="number"/>
-                <button class="px-3 rounded-lg btn-secondary" id="divine-fish-btn" type="button">
-                 OK
-                </button>
-               </div>
-              </div>
-              <div>
-               <label>
-                Ideiglenes szaporulat
-               </label>
-               <div class="grid grid-cols-2 gap-2 mt-1">
-                <input class="p-2 border rounded-lg" id="divine-regen-modifier" placeholder="Szorz&oacute; (pl. 2.5)" step="0.1" type="number"/>
-                <input class="p-2 border rounded-lg" id="divine-regen-duration" placeholder="Id&odblac;tartam (nap)" type="number"/>
-               </div>
-               <button class="w-full mt-2 py-1.5 rounded-lg btn-secondary" id="divine-regen-btn" type="button">
-                Alkalmaz
-               </button>
-              </div>
-              <hr style="border-color:var(--border)"/>
-              <h4 class="font-medium">
-               J&aacute;t&eacute;kos(ok) (C&eacute;lzott)
-              </h4>
-              <div>
-               <label>
-                J&aacute;t&eacute;kos Vagyona (+/-)
-               </label>
-               <div class="flex gap-2 mt-1">
-                <input class="w-full p-2 border rounded-lg" id="divine-player-fish-amount" placeholder="pl. 10 vagy -10" type="number"/>
-                <button class="px-3 rounded-lg btn-secondary" id="divine-player-fish-btn" type="button">
-                 Alkalmaz (Kijel&ouml;ltekre)
-                </button>
-               </div>
-              </div>
-              <div>
-               <label>
-                Ideiglenes ad&oacute;/t&aacute;mogat&aacute;s
-               </label>
-               <div class="grid grid-cols-2 gap-2 mt-1">
-                <input class="p-2 border rounded-lg" id="divine-tax-modifier" placeholder="Ad&oacute; (+/-)" type="number"/>
-                <input class="p-2 border rounded-lg" id="divine-tax-duration" placeholder="Id&odblac;tartam (nap)" type="number"/>
-               </div>
-               <button class="w-full mt-2 py-1.5 rounded-lg btn-secondary" id="divine-tax-btn" type="button">
-                Alkalmaz (Kijel&ouml;ltekre)
-               </button>
-              </div>
-              <div>
-               <label>
-                Rakt&aacute;rt&udblac;z (vagyonveszt&eacute;s)
-               </label>
-               <div class="flex gap-2 mt-1">
-                <input class="w-full p-2 border rounded-lg" id="divine-fire-percent" placeholder="Sz&aacute;zal&eacute;k (%)" type="number"/>
-                <button class="px-3 rounded-lg btn-danger" id="divine-fire-btn" type="button">
-                 Ind&iacute;t (Kijel&ouml;ltekre)
-                </button>
-               </div>
-              </div>
-             </div>
-            </details>
-            <details>
-             <summary class="font-semibold cursor-pointer text-sm" style="color: var(--text);">
-              PDF Riport Tartalma
-             </summary>
-             <div class="mt-4 space-y-2 text-sm border-t pt-4" id="pdf-section-picker" style="color:var(--text); border-color:var(--border)">
-              <label class="flex items-center gap-2">
-               <input checked="" class="rounded" name="pdf-sections" type="checkbox" value="#chart1-container"/>
-               <span>
-                T&oacute; &aacute;llapota &eacute;s esem&eacute;nyek
-               </span>
-              </label>
-              <label class="flex items-center gap-2">
-               <input checked="" class="rounded" name="pdf-sections" type="checkbox" value="#sustainability-container"/>
-               <span>
-                Fenntarthat&oacute; hal&aacute;szat index
-               </span>
-              </label>
-              <label class="flex items-center gap-2">
-               <input checked="" class="rounded" name="pdf-sections" type="checkbox" value="#chart3-container"/>
-               <span>
-                Hal&aacute;szok vagyona k&ouml;r&ouml;nk&eacute;nt
-               </span>
-              </label>
-              <label class="flex items-center gap-2">
-               <input checked="" class="rounded" name="pdf-sections" type="checkbox" value="#chart4-container"/>
-               <span>
-                Kihal&aacute;sz&aacute;s k&ouml;r&ouml;nk&eacute;nt
-               </span>
-              </label>
-              <label class="flex items-center gap-2">
-               <input class="rounded" name="pdf-sections" type="checkbox" value="#log-panel"/>
-               <span>
-                J&aacute;t&eacute;knapl&oacute;
-               </span>
-              </label>
-              <label class="flex items-center gap-2">
-               <input class="rounded" name="pdf-sections" type="checkbox" value="#audit-log-modal-content"/>
-               <span>
-                Audit Napl&oacute;
-               </span>
-              </label>
-              <p class="text-xs mt-2" style="color:var(--muted)">
-               Ha semmit nem jel&ouml;lsz, az alap n&eacute;gy blokk ker&uuml;l a PDF-re.
-              </p>
-             </div>
-            </details>
-           </div>
-          </details>
-         </div>
-        </div>
-       </details>
-      </div>
-     </div>
-    </section>
-    <details class="analysis-bay card-glass rounded-2xl shadow-md" id="analysis-bay-details">
-     <summary class="text-lg font-semibold">
-      📊 Elemz&eacute;s &eacute;s Grafikonok Megjelen&iacute;t&eacute;se
-     </summary>
-     <div class="p-6 space-y-8">
-      <details class="block" id="player-wealth-section" open="">
-       <summary class="text-lg font-semibold text-center mb-2 cursor-pointer" style="color:var(--text)">
-        <div class="flex justify-center items-center gap-3 flex-wrap">
-         <h3>
-          Hal&aacute;szok jelenlegi vagyona
-         </h3>
-         <span class="text-sm font-semibold px-3 py-1 rounded-full tag-muted">
-          &Ouml;sszesen:
-          <span id="total-wealth-number">
-           0
-          </span>
-          hal
-         </span>
-        </div>
-       </summary>
-       <div class="p-6 rounded-2xl card-glass card-hover shadow mt-2" id="chart2-container">
-        <div class="relative w-full max-w-[1000px] mx-auto h-[360px]">
-         <canvas id="player-wealth-chart">
-         </canvas>
-        </div>
-       </div>
-      </details>
-      <section class="grid grid-cols-1 gap-8">
-       <div class="p-6 rounded-2xl card-glass card-hover shadow" id="chart1-container">
-        <h3 class="text-lg font-semibold text-center mb-4" style="color:var(--text)">
-         T&oacute; &aacute;llapota &eacute;s esem&eacute;nyek
-        </h3>
-        <div class="relative w-full max-w-[1000px] mx-auto h-[380px]">
-         <canvas id="pond-history-chart">
-         </canvas>
-        </div>
-       </div>
-       <div class="p-6 rounded-2xl card-glass card-hover shadow" id="chart3-container">
-        <h3 class="text-lg font-semibold text-center mb-4" style="color:var(--text)">
-         Hal&aacute;szok vagyona naponk&eacute;nt
-        </h3>
-        <div class="relative w-full max-w-[1000px] mx-auto h-[360px]">
-         <canvas id="player-wealth-history-chart">
-         </canvas>
-        </div>
-       </div>
-       <div class="p-6 rounded-2xl card-glass card-hover shadow" id="chart4-container">
-        <h3 class="text-lg font-semibold text-center mb-4" style="color:var(--text)">
-         Kihal&aacute;sz&aacute;s naponk&eacute;nt
-        </h3>
-        <div class="relative w-full max-w-[1000px] mx-auto h-[360px]">
-         <canvas id="catch-history-chart">
-         </canvas>
-        </div>
-       </div>
-       <div class="p-6 rounded-2xl card-glass card-hover shadow" id="sustainability-container">
-        <h3 class="text-lg font-semibold text-center mb-2" style="color:var(--text)">
-         Fenntarthat&oacute; hal&aacute;szat index
-        </h3>
-        <div class="text-center text-xs mb-4" style="color:var(--muted)">
-         A
-         <strong style="color:#227a66">
-          pozit&iacute;v k&uuml;l&ouml;nbs&eacute;g
-         </strong>
-         fenntarthat&oacute; hal&aacute;szatot jelez (a maxim&aacute;lis fenntarthat&oacute; fog&aacute;s alatt maradtatok), m&iacute;g a
-         <strong style="color:var(--c-red)">
-          negat&iacute;v
-         </strong>
-         a t&uacute;lzott kihal&aacute;sz&aacute;st.
-        </div>
-        <div class="sustainability-table-container">
-         <table class="w-full text-sm text-left" style="color:var(--text)">
-          <thead class="text-xs table-head sticky top-0" style="color:#1f2937">
-           <tr>
-            <th class="px-6 py-3">
-             Nap
-            </th>
-            <th class="px-6 py-3">
-             Fenntarthat&oacute; fog&aacute;s (MFF)
-            </th>
-            <th class="px-6 py-3">
-             T&eacute;nyleges fog&aacute;s
-            </th>
-            <th class="px-6 py-3">
-             K&uuml;l&ouml;nbs&eacute;g
-            </th>
-           </tr>
-          </thead>
-          <tbody id="sustainability-table-body">
-          </tbody>
-         </table>
-        </div>
-       </div>
-      </section>
-     </div>
-    </details>
-   </div>
-  </div>
-  <div aria-labelledby="modal-title" aria-modal="true" class="modal fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50 opacity-0 pointer-events-none" id="chaos-modal" role="dialog">
-   <div class="rounded-2xl shadow-2xl p-6 sm:p-8 max-w-lg w-full transform transition-transform duration-300 scale-95" style="background: var(--card); border: 1px solid var(--border);">
-    <h2 class="text-2xl font-bold mb-4" id="modal-title" style="color:var(--text)">
-    </h2>
-    <div class="modal-body mb-6" id="modal-body" style="color:var(--muted)">
-    </div>
-    <div class="flex justify-end gap-3" id="modal-footer">
-    </div>
-   </div>
-  </div>
-  <aside class="flex flex-col" id="log-panel">
-   <div class="p-4 flex justify-between items-center border-b" style="border-color: var(--border);">
-    <h2 class="text-xl font-bold" style="color: var(--text);">
-     J&aacute;t&eacute;knapl&oacute;
-    </h2>
-    <button class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700" id="log-close-btn" type="button">
-     <svg class="w-5 h-5" fill="currentColor" viewbox="0 0 20 20">
-      <path clip-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" fill-rule="evenodd">
-      </path>
-     </svg>
-    </button>
-   </div>
-   <div class="flex-grow p-4 overflow-y-auto space-y-3" id="log-content">
-   </div>
-  </aside>
-  <div class="modal fixed inset-0 bg-black/60 flex items-center justify-center p-4 opacity-0 pointer-events-none" id="audit-log-modal">
-   <div class="rounded-2xl shadow-2xl p-6 sm:p-8 max-w-7xl w-full h-full flex flex-col transform transition-transform duration-300 scale-95" id="audit-log-modal-content" style="background: var(--card); border: 1px solid var(--border);">
-    <div class="flex justify-between items-center mb-4">
-     <h2 class="text-2xl font-bold" style="color:var(--text)">
-      Audit Napl&oacute;
-     </h2>
-     <div class="flex items-center gap-6">
-      <div class="flex items-center gap-3 text-sm">
-       <span class="font-medium">
-        N&eacute;zet:
-       </span>
-       <label class="flex items-center gap-1.5">
-        <input checked="" class="rounded" name="audit-grouping" type="radio" value="by-day"/>
-        Napok szerint
-       </label>
-       <label class="flex items-center gap-1.5">
-        <input class="rounded" name="audit-grouping" type="radio" value="by-player"/>
-        Hal&aacute;szok szerint
-       </label>
-      </div>
-      <select class="rounded-xl border shadow-sm p-2.5" id="audit-log-player-filter" style="border-color: var(--border); background: rgba(255,255,255,.9); color:var(--text);">
-      </select>
-      <button class="px-4 py-2 rounded-xl btn-danger" id="audit-log-close-btn" type="button">
-       Bez&aacute;r&aacute;s
-      </button>
-     </div>
-    </div>
-    <div class="modal-body flex-grow" id="audit-log-table-container">
-     <p class="text-center p-8" style="color:var(--muted)">
-      Nincsenek megjelen&iacute;thet&odblac; adatok.
-     </p>
-    </div>
-   </div>
-  </div>
-  <div aria-labelledby="player-wealth-title" aria-modal="true" class="modal fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50 opacity-0 pointer-events-none" id="player-wealth-modal" role="dialog">
-   <div class="modal-content rounded-2xl shadow-2xl transform transition-transform duration-300 scale-95" style="background: var(--card); border: 1px solid var(--border);">
-    <h2 id="player-wealth-title">
-     J&aacute;t&eacute;kos Vagyona
-    </h2>
-    <h3>
-     Jelenlegi Vagyonod:
-    </h3>
-    <p id="player-wealth-amount">
-     0
-    </p>
-    <button class="px-4 py-2 rounded-xl btn-primary" id="player-wealth-close-btn" type="button">
-     Bez&aacute;r&aacute;s
-    </button>
-   </div>
-  </div>
-  <div id="flash-overlay">
-  </div>
-  <div id="toast-container">
-  </div>
-  <script>
-   const { jsPDF } = window.jspdf;
+</style>
+</head>
+<body>
+<div class="relative z-10 p-4 sm:p-6 lg:p-8 max-w-screen-2xl mx-auto" id="app">
+<header class="flex items-center justify-between mb-8">
+<div class="flex items-center gap-3">
+<div class="h-10 w-10 rounded-xl shadow-lg flex items-center justify-center" style="background: var(--c-turq); box-shadow: 0 10px 18px rgba(84,191,178,.35);">
+<svg aria-hidden="true" class="w-6 h-6" style="color:#0b1a2c" viewbox="0 0 24 24"><path d="M5 4h3v16H5zM16 4h3v16h-3zM8 11h8v2H8z" fill="currentColor"></path></svg>
+</div>
+<h1 class="text-3xl md:text-4xl font-black tracking-tight" style="background: linear-gradient(90deg, var(--c-navy), var(--c-turq)); -webkit-background-clip: text; color: transparent;">Halastó – Facilitátor Dashboard</h1>
+</div>
+<div class="flex items-center gap-3">
+<button class="inline-flex items-center gap-2 px-3 py-2 rounded-lg border bg-white/80 dark:bg-white/10" id="log-toggle-btn" style="border-color: var(--border); color: var(--text);"><svg class="w-4 h-4 opacity-90" fill="currentColor" viewbox="0 0 24 24"><path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h16v2H4z"></path></svg><span class="text-sm font-medium">Játéknapló</span></button>
+<button class="inline-flex items-center gap-2 px-3 py-2 rounded-lg border bg-white/80 dark:bg-white/10" id="theme-toggle" style="border-color: var(--border); color: var(--text);"><svg aria-hidden="true" class="w-4 h-4 opacity-90" fill="currentColor" id="theme-icon" viewbox="0 0 24 24"><path d="M12 18a6 6 0 1 0 0-12 6 6 0 0 0 0 12Z M12 2v2M12 20v2M4 12H2M22 12h-2M5 5l-1.5-1.5M20.5 20.5 19 19M19 5l1.5-1.5M5 19 3.5 20.5"></path></svg><span class="text-sm font-medium">Téma</span></button>
+</div>
+</header>
+<div class="max-w-xl mx-auto p-6 md:p-8 rounded-2xl card-glass card-hover shadow-md" id="setup-screen">
+<h2 class="text-2xl font-bold text-center mb-6" style="color:var(--text)">Játék indítása</h2>
+<div class="space-y-4">
+<div>
+<label class="block text-sm font-medium" for="player-count" style="color:var(--muted)">Halászok száma (4–10)</label>
+<input class="mt-1 block w-full rounded-xl border shadow-sm p-3 focus:outline-none focus:ring-2" id="player-count" max="10" min="4" name="player-count" style="border-color: var(--border); background: rgba(255,255,255,.9); color:var(--text);" type="number" value="4"/>
+</div>
+<div class="flex items-center justify-between">
+<button class="inline-flex items-center gap-2 font-semibold py-3 px-5 rounded-xl shadow-lg transition-transform active:scale-[.98] btn-primary" id="start-game-btn"><svg aria-hidden="true" class="w-4 h-4" fill="currentColor" viewbox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>Új játék indítása</button>
+<button class="inline-flex items-center gap-2 font-medium py-3 px-4 rounded-xl border transition-colors" id="demo-fill-btn" style="border-color: var(--border); color:var(--text); background: rgba(225,234,204,.45);"><svg aria-hidden="true" class="w-4 h-4" fill="currentColor" viewbox="0 0 24 24"><path d="M3 12h18v2H3zM3 7h12v2H3zM3 17h8v2H3z"></path></svg>Minta adatok</button>
+</div>
+</div>
+</div>
+<div class="hidden" id="game-screen">
+<section class="mb-8" id="cockpit-grid">
+<div class="p-6 rounded-2xl card-glass card-hover shadow-md">
+<div class="table-head -mt-6 -mx-6 mb-4 p-3 rounded-t-xl text-center">
+<h2 class="text-2xl font-bold" id="main-day-indicator" style="color: var(--text)"></h2>
+<h3 class="text-lg font-medium" id="season-indicator" style="color: var(--muted)"></h3>
+</div>
+<div class="p-3 my-4 text-center rounded-2xl card-glass text-sm italic font-medium" id="daily-analysis-display" style="color: var(--text)"></div>
+<button class="w-full font-semibold py-3 px-4 rounded-xl shadow-md transition-transform active:scale-[.98] mb-4" id="end-round-btn" style="background: var(--c-turq); color:#0b1a2c;"><span class="inline-flex items-center gap-2"></span></button>
+<div class="space-y-3" id="player-inputs"></div>
+</div>
+<div class="flex flex-col gap-6">
+<div class="status-grid">
+<div class="rounded-2xl card-glass card-hover shadow status-card" id="pond-status-card"><h3 title="Halak a tóban">Halak a tóban</h3><p id="pond-status" style="color:var(--text)">100</p></div>
+<div class="rounded-2xl card-glass card-hover shadow status-card" id="sustainable-catch-card"><h3 title="Fenntartható fogás (stabil)">Fennt. Fogás</h3><p id="sustainable-catch-display" style="color:var(--c-turq)">0</p></div>
+<div class="rounded-2xl card-glass card-hover shadow status-card" id="max-growth-catch-card"><h3 title="Max. Növekedés Fogás">Max. Fogás</h3><p id="max-growth-catch-display" style="color:var(--c-turq)">0</p></div>
+<div class="rounded-2xl card-glass card-hover shadow editable-stat status-card" id="fixed-cost-card"><h3 title="Fix költség">Fix Költség</h3><div id="fixed-cost-display-container"><p id="fixed-cost-display" style="color:var(--text)">0</p></div></div>
+<div class="rounded-2xl card-glass card-hover shadow status-card"><h3 title="Tó Egészsége">Tó Egészsége</h3><p id="pond-health-display">100%</p><div class="w-full h-2 rounded-full mt-1 health-bar-bg"><div class="h-full rounded-full" id="pond-health-bar-inner" style="width: 100%;"></div></div><p class="pond-health-text" id="pond-health-text" style="color:var(--muted)"></p></div>
+<div class="rounded-2xl card-glass card-hover shadow status-card"><h3 title="Bank (Adó)">Bank (Adó)</h3><p id="bank-status" style="color:var(--c-gold)">0</p></div>
+</div>
+<details class="admin-details">
+<summary>📊 Tréning Összesítő (Menet közbeni)</summary>
+<div class="admin-details-content pt-4 debrief-table-container">
+<table class="w-full text-sm debrief-table">
+<thead class="table-head">
+<tr>
+<th>Halász</th>
+<th>Státusz</th>
+<th>Vagyon</th>
+<th>Összes Fogás (%)</th>
+<th>Túlhalászás</th>
+<th>Hírnév +/-</th>
+<th>Összes Költség</th>
+</tr>
+</thead>
+<tbody id="debrief-table-body">
+</tbody>
+<tfoot class="table-head font-bold" id="debrief-table-foot">
+</tfoot>
+</table>
+</div>
+</details>
+<section class="card-glass rounded-2xl" id="active-effects-section">
+<h3 class="text-lg font-semibold pt-4 px-4 text-center" style="color:var(--text)">Események</h3>
+<div class="space-y-3 p-4" id="active-effects-panel"></div>
+</section>
+<div class="space-y-4">
+<details class="admin-details">
+<summary>Esemény indítása</summary>
+<div class="admin-details-content pt-4 space-y-4">
+<div>
+<h3 class="text-sm font-semibold mb-2" style="color:var(--muted)">Piaci környezet</h3>
+<div class="space-y-3">
+<select class="block w-full rounded-xl border shadow-sm p-2.5" id="market-card-select" style="border-color: var(--border); background: rgba(255,255,255,.9); color:var(--text);"></select>
+<button class="w-full font-semibold py-2.5 px-4 rounded-xl shadow-md" id="trigger-market-btn" style="background: var(--c-cream); color:#283142;">Piac aktiválása</button>
+</div>
+</div>
+<div>
+<h3 class="text-sm font-semibold mb-2" style="color:var(--muted)">Váratlan esemény</h3>
+<div class="space-y-3">
+<select class="block w-full rounded-xl border shadow-sm p-2.5" id="chaos-card-select" style="border-color: var(--border); background: rgba(255,255,255,.9); color:var(--text);"></select>
+<div class="grid grid-cols-1 gap-2">
+<button class="w-full font-semibold py-2.5 px-2 rounded-xl shadow-md btn-secondary" id="trigger-chaos-btn">Beállítás</button>
+</div>
+</div>
+</div>
+</div>
+</details>
+<details class="admin-details">
+<summary>Adminisztráció és Beállítások</summary>
+<div class="admin-details-content pt-4 space-y-4">
+<section id="event-advisor-panel"></section>
+<div class="grid grid-cols-2 gap-2">
+<button class="w-full font-semibold py-2.5 px-4 rounded-xl shadow-md" id="show-audit-log-btn" style="background:var(--c-cream); color:#283142;">Audit Napló</button>
+<button class="w-full font-semibold py-2.5 px-4 rounded-xl shadow-md btn-primary" id="export-pdf-btn"><span class="inline-flex items-center justify-center gap-2"><svg aria-hidden="true" class="w-4 h-4" fill="currentColor" viewbox="0 0 24 24"><path d="M12 3v12l4-4h-3V3zM5 19h14v2H5z"></path></svg>PDF</span></button>
+<button class="w-full font-semibold py-2.5 px-4 rounded-xl shadow-md text-sm" disabled="" id="undo-btn" style="background:var(--c-cream); color:#283142;">Visszavon</button>
+<button class="w-full font-semibold py-2.5 px-4 rounded-xl shadow-md btn-danger" id="new-game-btn"><span class="inline-flex items-center justify-center gap-2"><svg aria-hidden="true" class="w-4 h-4" fill="currentColor" viewbox="0 0 24 24"><path d="M12 5v14m-7-7h14"></path></svg>Új Játék</span></button>
+</div>
+<details>
+<summary class="font-semibold cursor-pointer text-sm" style="color: var(--text);">Időzítő</summary>
+<div class="border-t mt-2 pt-4" style="border-color:var(--border)">
+<div class="text-4xl font-bold text-center" id="timer-display" style="color:var(--text)">00:00</div>
+<div class="grid grid-cols-2 gap-2 mt-2 text-sm">
+<select class="w-full p-1 rounded-lg border" id="timer-select" style="border-color:var(--border); background:rgba(255,255,255,.9)"><option value="60">1 perc</option><option value="120">2 perc</option><option selected="" value="180">3 perc</option><option value="240">4 perc</option><option value="300">5 perc</option></select>
+<label class="flex items-center gap-1.5"><input class="rounded" id="timer-mute" type="checkbox"/> Némítás</label>
+</div>
+<div class="grid grid-cols-2 gap-2 mt-2">
+<button class="w-full text-sm font-semibold py-2 px-2 rounded-lg btn-primary" id="timer-start-btn">Start</button>
+<button class="w-full text-sm font-semibold py-2 px-2 rounded-lg" id="timer-reset-btn" style="background:var(--c-cream); color:#283142;">Reset</button>
+</div>
+</div>
+</details>
+
+
+<div class="space-y-4">
+
+
+</div>
+<details>
+<summary class="font-semibold cursor-pointer text-sm text-amber-600">Isteni Beavatkozás</summary>
+<div class="mt-4 space-y-4 text-sm p-3 rounded-lg border-t pt-4" style="background: rgba(228, 193, 87, 0.1); border-color:var(--border)">
+<h4 class="font-medium">Célpontok</h4>
+<label class="flex items-center gap-1.5 text-xs"><input class="rounded" id="divine-target-all" type="checkbox"/> <strong>Mindenki</strong></label>
+<div class="grid grid-cols-2 gap-x-4 gap-y-1 text-xs pl-2" id="divine-player-selector">
+</div>
+<hr style="border-color:var(--border)"/>
+<h4 class="font-medium">Tó (Globális)</h4>
+<div>
+<label>Halak a tóhoz (+/-)</label>
+<div class="flex gap-2 mt-1">
+<input class="w-full p-2 border rounded-lg" id="divine-fish-amount" placeholder="pl. 50 vagy -20" type="number"/>
+<button class="px-3 rounded-lg btn-secondary" id="divine-fish-btn">OK</button>
+</div>
+</div>
+<div>
+<label>Ideiglenes szaporulat</label>
+<div class="grid grid-cols-2 gap-2 mt-1">
+<input class="p-2 border rounded-lg" id="divine-regen-modifier" placeholder="Szorzó (pl. 2.5)" step="0.1" type="number"/>
+<input class="p-2 border rounded-lg" id="divine-regen-duration" placeholder="Időtartam (nap)" type="number"/>
+</div>
+<button class="w-full mt-2 py-1.5 rounded-lg btn-secondary" id="divine-regen-btn">Alkalmaz</button>
+</div>
+<hr style="border-color:var(--border)"/>
+<h4 class="font-medium">Játékos(ok) (Célzott)</h4>
+<div>
+<label>Játékos Vagyona (+/-)</label>
+<div class="flex gap-2 mt-1">
+<input class="w-full p-2 border rounded-lg" id="divine-player-fish-amount" placeholder="pl. 10 vagy -10" type="number"/>
+<button class="px-3 rounded-lg btn-secondary" id="divine-player-fish-btn">Alkalmaz (Kijelöltekre)</button>
+</div>
+</div>
+<div>
+<label>Ideiglenes adó/támogatás</label>
+<div class="grid grid-cols-2 gap-2 mt-1">
+<input class="p-2 border rounded-lg" id="divine-tax-modifier" placeholder="Adó (+/-)" type="number"/>
+<input class="p-2 border rounded-lg" id="divine-tax-duration" placeholder="Időtartam (nap)" type="number"/>
+</div>
+<button class="w-full mt-2 py-1.5 rounded-lg btn-secondary" id="divine-tax-btn">Alkalmaz (Kijelöltekre)</button>
+</div>
+<div>
+<label>Raktártűz (vagyonvesztés)</label>
+<div class="flex gap-2 mt-1">
+<input class="w-full p-2 border rounded-lg" id="divine-fire-percent" placeholder="Százalék (%)" type="number"/>
+<button class="px-3 rounded-lg btn-danger" id="divine-fire-btn">Indít (Kijelöltekre)</button>
+</div>
+</div>
+</div>
+</details><details>
+<summary class="font-semibold cursor-pointer text-sm" style="color: var(--text);">PDF Riport Tartalma</summary>
+<div class="mt-4 space-y-2 text-sm border-t pt-4" id="pdf-section-picker" style="color:var(--text); border-color:var(--border)">
+<label class="flex items-center gap-2"><input checked="" class="rounded" name="pdf-sections" type="checkbox" value="#chart1-container"/> <span>Tó állapota és események</span></label>
+<label class="flex items-center gap-2"><input checked="" class="rounded" name="pdf-sections" type="checkbox" value="#sustainability-container"/> <span>Fenntartható halászat index</span></label>
+<label class="flex items-center gap-2"><input checked="" class="rounded" name="pdf-sections" type="checkbox" value="#chart3-container"/> <span>Halászok vagyona körönként</span></label>
+<label class="flex items-center gap-2"><input checked="" class="rounded" name="pdf-sections" type="checkbox" value="#chart4-container"/> <span>Kihalászás körönként</span></label>
+<label class="flex items-center gap-2"><input class="rounded" name="pdf-sections" type="checkbox" value="#log-panel"/> <span>Játéknapló</span></label>
+<label class="flex items-center gap-2"><input class="rounded" name="pdf-sections" type="checkbox" value="#audit-log-modal-content"/> <span>Audit Napló</span></label>
+<p class="text-xs mt-2" style="color:var(--muted)">Ha semmit nem jelölsz, az alap négy blokk kerül a PDF-re.</p>
+</div>
+</details></div>
+</details></div></div></section>
+<details class="analysis-bay card-glass rounded-2xl shadow-md" id="analysis-bay-details">
+<summary class="text-lg font-semibold">📊 Elemzés és Grafikonok Megjelenítése</summary>
+<div class="p-6 space-y-8">
+<details class="block" id="player-wealth-section" open="">
+<summary class="text-lg font-semibold text-center mb-2 cursor-pointer" style="color:var(--text)">
+<div class="flex justify-center items-center gap-3 flex-wrap">
+<h3>Halászok jelenlegi vagyona</h3>
+<span class="text-sm font-semibold px-3 py-1 rounded-full tag-muted">Összesen: <span id="total-wealth-number">0</span> hal</span>
+</div>
+</summary>
+<div class="p-6 rounded-2xl card-glass card-hover shadow mt-2" id="chart2-container">
+<div class="relative w-full max-w-[1000px] mx-auto h-[360px]"><canvas id="player-wealth-chart"></canvas></div>
+</div>
+</details>
+<section class="grid grid-cols-1 gap-8">
+<div class="p-6 rounded-2xl card-glass card-hover shadow" id="chart1-container"><h3 class="text-lg font-semibold text-center mb-4" style="color:var(--text)">Tó állapota és események</h3><div class="relative w-full max-w-[1000px] mx-auto h-[380px]"><canvas id="pond-history-chart"></canvas></div></div>
+<div class="p-6 rounded-2xl card-glass card-hover shadow" id="chart3-container"><h3 class="text-lg font-semibold text-center mb-4" style="color:var(--text)">Halászok vagyona naponként</h3><div class="relative w-full max-w-[1000px] mx-auto h-[360px]"><canvas id="player-wealth-history-chart"></canvas></div></div>
+<div class="p-6 rounded-2xl card-glass card-hover shadow" id="chart4-container"><h3 class="text-lg font-semibold text-center mb-4" style="color:var(--text)">Kihalászás naponként</h3><div class="relative w-full max-w-[1000px] mx-auto h-[360px]"><canvas id="catch-history-chart"></canvas></div></div>
+<div class="p-6 rounded-2xl card-glass card-hover shadow" id="sustainability-container"><h3 class="text-lg font-semibold text-center mb-2" style="color:var(--text)">Fenntartható halászat index</h3><div class="text-center text-xs mb-4" style="color:var(--muted)">A <strong style="color:#227a66">pozitív különbség</strong> fenntartható halászatot jelez (a maximális fenntartható fogás alatt maradtatok), míg a <strong style="color:var(--c-red)">negatív</strong> a túlzott kihalászást.</div><div class="sustainability-table-container"><table class="w-full text-sm text-left" style="color:var(--text)"><thead class="text-xs table-head sticky top-0" style="color:#1f2937"><tr><th class="px-6 py-3">Nap</th><th class="px-6 py-3">Fenntartható fogás (MFF)</th><th class="px-6 py-3">Tényleges fogás</th><th class="px-6 py-3">Különbség</th></tr></thead><tbody id="sustainability-table-body"></tbody></table></div></div>
+</section>
+</div>
+</details>
+</div>
+</div>
+<div aria-labelledby="modal-title" aria-modal="true" class="modal fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50 opacity-0 pointer-events-none" id="chaos-modal" role="dialog"><div class="rounded-2xl shadow-2xl p-6 sm:p-8 max-w-lg w-full transform transition-transform duration-300 scale-95" style="background: var(--card); border: 1px solid var(--border);"><h2 class="text-2xl font-bold mb-4" id="modal-title" style="color:var(--text)"></h2><div class="modal-body mb-6" id="modal-body" style="color:var(--muted)"></div><div class="flex justify-end gap-3" id="modal-footer"></div></div></div>
+<aside class="flex flex-col" id="log-panel"><div class="p-4 flex justify-between items-center border-b" style="border-color: var(--border);"><h2 class="text-xl font-bold" style="color: var(--text);">Játéknapló</h2><button class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700" id="log-close-btn"><svg class="w-5 h-5" fill="currentColor" viewbox="0 0 20 20"><path clip-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" fill-rule="evenodd"></path></svg></button></div><div class="flex-grow p-4 overflow-y-auto space-y-3" id="log-content"></div></aside>
+<div class="modal fixed inset-0 bg-black/60 flex items-center justify-center p-4 opacity-0 pointer-events-none" id="audit-log-modal">
+<div class="rounded-2xl shadow-2xl p-6 sm:p-8 max-w-7xl w-full h-full flex flex-col transform transition-transform duration-300 scale-95" id="audit-log-modal-content" style="background: var(--card); border: 1px solid var(--border);">
+<div class="flex justify-between items-center mb-4">
+<h2 class="text-2xl font-bold" style="color:var(--text)">Audit Napló</h2>
+<div class="flex items-center gap-6">
+<div class="flex items-center gap-3 text-sm">
+<span class="font-medium">Nézet:</span>
+<label class="flex items-center gap-1.5"><input checked="" class="rounded" name="audit-grouping" type="radio" value="by-day"/> Napok szerint</label>
+<label class="flex items-center gap-1.5"><input class="rounded" name="audit-grouping" type="radio" value="by-player"/> Halászok szerint</label>
+</div>
+<select class="rounded-xl border shadow-sm p-2.5" id="audit-log-player-filter" style="border-color: var(--border); background: rgba(255,255,255,.9); color:var(--text);"></select>
+<button class="px-4 py-2 rounded-xl btn-danger" id="audit-log-close-btn">Bezárás</button>
+</div>
+</div>
+<div class="modal-body flex-grow" id="audit-log-table-container">
+<p class="text-center p-8" style="color:var(--muted)">Nincsenek megjeleníthető adatok.</p>
+</div>
+</div>
+</div>
+<div aria-labelledby="player-wealth-title" aria-modal="true" class="modal fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50 opacity-0 pointer-events-none" id="player-wealth-modal" role="dialog">
+<div class="modal-content rounded-2xl shadow-2xl transform transition-transform duration-300 scale-95" style="background: var(--card); border: 1px solid var(--border);">
+<h2 id="player-wealth-title">Játékos Vagyona</h2>
+<h3>Jelenlegi Vagyonod:</h3>
+<p id="player-wealth-amount">0</p>
+<button class="px-4 py-2 rounded-xl btn-primary" id="player-wealth-close-btn">Bezárás</button>
+</div>
+</div>
+<div id="flash-overlay"></div>
+<div id="toast-container"></div>
+<script>
+    const { jsPDF } = window.jspdf;
 
     (function registerAnnotation(){ try { const plugin = window['chartjs-plugin-annotation']; if (plugin && typeof Chart !== 'undefined') Chart.register(plugin); } catch(e){ console.warn('Annotation plugin nem elérhető.'); } })();
 
@@ -2683,8 +2238,8 @@ function updateDisplay(s){
       populateChaosCards(); populateMarketCards(); initializeCharts(); loadPdfSectionPrefs(); resetTimer();
     });
   </script>
-  <p class="text-xs text-center text-slate-400 dark:text-slate-500 mt-8 pb-4">
-   K&eacute;sz&iacute;tette: Budai M&aacute;t&eacute;, 2025, mate.budai@gmail.com
+<p class="text-xs text-center text-slate-400 dark:text-slate-500 mt-8 pb-4">
+    Készítette: Budai Máté, 2025, mate.budai@gmail.com. Minden jog fenntartva! Hajrá, Fradi!
   </p>
- </body>
+</body>
 </html>
