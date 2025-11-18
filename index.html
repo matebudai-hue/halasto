@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Fishpond Dashboard</title>
+<title>Halastó Dashboard</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
@@ -291,7 +291,7 @@
 <div class="h-10 w-10 rounded-xl shadow-lg flex items-center justify-center" style="background: var(--c-turq); box-shadow: 0 10px 18px rgba(84,191,178,.35);">
 <svg aria-hidden="true" class="w-6 h-6" style="color:#0b1a2c" viewbox="0 0 24 24"><path d="M5 4h3v16H5zM16 4h3v16h-3zM8 11h8v2H8z" fill="currentColor"></path></svg>
 </div>
-<h1 class="text-3xl md:text-4xl font-black tracking-tight" style="background: linear-gradient(90deg, var(--c-navy), var(--c-turq)); -webkit-background-clip: text; color: transparent;">Halastó</h1>
+<h1 class="text-3xl md:text-4xl font-black tracking-tight" style="background: linear-gradient(90deg, var(--c-navy), var(--c-turq)); -webkit-background-clip: text; color: transparent;">Halastó Dashboard</h1>
 </div>
 <div class="flex items-center gap-3">
 <button class="inline-flex items-center gap-2 px-3 py-2 rounded-lg border bg-white/80 dark:bg-white/10" id="log-toggle-btn" style="border-color: var(--border); color: var(--text);"><svg class="w-4 h-4 opacity-90" fill="currentColor" viewbox="0 0 24 24"><path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h16v2H4z"></path></svg><span class="text-sm font-medium">Játéknapló</span></button>
@@ -332,7 +332,7 @@
 <div class="rounded-2xl card-glass card-hover shadow status-card"><h3 title="Bank (Adó)">Bank (Adó)</h3><p id="bank-status" style="color:var(--c-gold)">0</p></div>
 </div>
 <details class="admin-details">
-<summary>Áttekintő táblázat</summary>
+<summary>Összesítő táblázat</summary>
 <div class="admin-details-content pt-4 debrief-table-container">
 <table class="w-full text-sm debrief-table">
 <thead class="table-head">
@@ -375,7 +375,41 @@
 <div class="grid grid-cols-1 gap-2">
 <button class="w-full font-semibold py-2.5 px-2 rounded-xl shadow-md btn-secondary" id="trigger-chaos-btn">Beállítás</button>
 </div>
-    <details>
+</div>
+</div>
+</div>
+</details>
+<details class="admin-details">
+<summary>Adminisztráció és Beállítások</summary>
+<div class="admin-details-content pt-4 space-y-4">
+<section id="event-advisor-panel"></section>
+<div class="grid grid-cols-2 gap-2">
+<button class="w-full font-semibold py-2.5 px-4 rounded-xl shadow-md" id="show-audit-log-btn" style="background:var(--c-cream); color:#283142;">Audit Napló</button>
+<button class="w-full font-semibold py-2.5 px-4 rounded-xl shadow-md btn-primary" id="export-pdf-btn"><span class="inline-flex items-center justify-center gap-2"><svg aria-hidden="true" class="w-4 h-4" fill="currentColor" viewbox="0 0 24 24"><path d="M12 3v12l4-4h-3V3zM5 19h14v2H5z"></path></svg>PDF</span></button>
+<button class="w-full font-semibold py-2.5 px-4 rounded-xl shadow-md text-sm" disabled="" id="undo-btn" style="background:var(--c-cream); color:#283142;">Visszavon</button>
+<button class="w-full font-semibold py-2.5 px-4 rounded-xl shadow-md btn-danger" id="new-game-btn"><span class="inline-flex items-center justify-center gap-2"><svg aria-hidden="true" class="w-4 h-4" fill="currentColor" viewbox="0 0 24 24"><path d="M12 5v14m-7-7h14"></path></svg>Új Játék</span></button>
+</div>
+<details>
+<summary class="font-semibold cursor-pointer text-sm" style="color: var(--text);">Időzítő</summary>
+<div class="border-t mt-2 pt-4" style="border-color:var(--border)">
+<div class="text-4xl font-bold text-center" id="timer-display" style="color:var(--text)">00:00</div>
+<div class="grid grid-cols-2 gap-2 mt-2 text-sm">
+<select class="w-full p-1 rounded-lg border" id="timer-select" style="border-color:var(--border); background:rgba(255,255,255,.9)"><option value="60">1 perc</option><option value="120">2 perc</option><option selected="" value="180">3 perc</option><option value="240">4 perc</option><option value="300">5 perc</option></select>
+<label class="flex items-center gap-1.5"><input class="rounded" id="timer-mute" type="checkbox"/> Némítás</label>
+</div>
+<div class="grid grid-cols-2 gap-2 mt-2">
+<button class="w-full text-sm font-semibold py-2 px-2 rounded-lg btn-primary" id="timer-start-btn">Start</button>
+<button class="w-full text-sm font-semibold py-2 px-2 rounded-lg" id="timer-reset-btn" style="background:var(--c-cream); color:#283142;">Reset</button>
+</div>
+</div>
+</details>
+
+
+<div class="space-y-4">
+
+
+</div>
+<details>
 <summary class="font-semibold cursor-pointer text-sm text-amber-600">Isteni Beavatkozás</summary>
 <div class="mt-4 space-y-4 text-sm p-3 rounded-lg border-t pt-4" style="background: rgba(228, 193, 87, 0.1); border-color:var(--border)">
 <h4 class="font-medium">Célpontok</h4>
@@ -422,40 +456,6 @@
 <input class="w-full p-2 border rounded-lg" id="divine-fire-percent" placeholder="Százalék (%)" type="number"/>
 <button class="px-3 rounded-lg btn-danger" id="divine-fire-btn">Indít (Kijelöltekre)</button>
 </div>
-</div>
-</div>
-</div>
-</div>
-</details>
-<details class="admin-details">
-<summary>Adminisztráció és Beállítások</summary>
-<div class="admin-details-content pt-4 space-y-4">
-<section id="event-advisor-panel"></section>
-<div class="grid grid-cols-2 gap-2">
-<button class="w-full font-semibold py-2.5 px-4 rounded-xl shadow-md" id="show-audit-log-btn" style="background:var(--c-cream); color:#283142;">Audit Napló</button>
-<button class="w-full font-semibold py-2.5 px-4 rounded-xl shadow-md btn-primary" id="export-pdf-btn"><span class="inline-flex items-center justify-center gap-2"><svg aria-hidden="true" class="w-4 h-4" fill="currentColor" viewbox="0 0 24 24"><path d="M12 3v12l4-4h-3V3zM5 19h14v2H5z"></path></svg>PDF</span></button>
-<button class="w-full font-semibold py-2.5 px-4 rounded-xl shadow-md text-sm" disabled="" id="undo-btn" style="background:var(--c-cream); color:#283142;">Visszavon</button>
-<button class="w-full font-semibold py-2.5 px-4 rounded-xl shadow-md btn-danger" id="new-game-btn"><span class="inline-flex items-center justify-center gap-2"><svg aria-hidden="true" class="w-4 h-4" fill="currentColor" viewbox="0 0 24 24"><path d="M12 5v14m-7-7h14"></path></svg>Új Játék</span></button>
-</div>
-<details>
-<summary class="font-semibold cursor-pointer text-sm" style="color: var(--text);">Időzítő</summary>
-<div class="border-t mt-2 pt-4" style="border-color:var(--border)">
-<div class="text-4xl font-bold text-center" id="timer-display" style="color:var(--text)">00:00</div>
-<div class="grid grid-cols-2 gap-2 mt-2 text-sm">
-<select class="w-full p-1 rounded-lg border" id="timer-select" style="border-color:var(--border); background:rgba(255,255,255,.9)"><option value="60">1 perc</option><option value="120">2 perc</option><option selected="" value="180">3 perc</option><option value="240">4 perc</option><option value="300">5 perc</option></select>
-<label class="flex items-center gap-1.5"><input class="rounded" id="timer-mute" type="checkbox"/> Némítás</label>
-</div>
-<div class="grid grid-cols-2 gap-2 mt-2">
-<button class="w-full text-sm font-semibold py-2 px-2 rounded-lg btn-primary" id="timer-start-btn">Start</button>
-<button class="w-full text-sm font-semibold py-2 px-2 rounded-lg" id="timer-reset-btn" style="background:var(--c-cream); color:#283142;">Reset</button>
-</div>
-</div>
-</details>
-
-
-<div class="space-y-4">
-
-
 </div>
 </div>
 </details><details>
